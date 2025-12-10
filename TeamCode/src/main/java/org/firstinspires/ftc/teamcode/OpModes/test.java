@@ -6,16 +6,20 @@ import static android.os.SystemClock.sleep;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.RobotBetSystems.Intake;
 
 @TeleOp
 public class test extends OpMode {
     Intake intake;
     boolean opModeIsActive;
+
+
+
     @Override
     public void init() {
 
-    intake = new Intake(hardwareMap);
+        intake = new Intake(hardwareMap);
     }
     @Override
     public void start(){
@@ -26,10 +30,12 @@ public class test extends OpMode {
                 while (opModeIsActive){
                     sleep(500);
                     telemetry.addData("balls capacity:",  intake.UpdateBallCount());
+                    telemetry.addData("last:",  intake.LastBallDetection);
+                    telemetry.update();
                 }
 
             }
-        }).start();
+        });
     }
 
     @Override
@@ -37,9 +43,9 @@ public class test extends OpMode {
 
 
 //        telemetry.addData("balls capacity:",  intake.UpdateBallCount());
-//        SensorADis = SensorA.getDistance(DistanceUnit.INCH);
-//        SensorBDis = SensorB.getDistance(DistanceUnit.INCH);
-//        MinDis = (Dis - SensorADis - SensorBDis) + 2.5;
+//        double SensorADis = intake.SensorA.getDistance(DistanceUnit.INCH);
+//        double SensorBDis = intake.SensorB.getDistance(DistanceUnit.INCH);
+//        double MinDis = (intake.Dis - SensorADis - SensorBDis) + 2.5;
 //        telemetry.addData("SensorA", SensorADis);
 //        telemetry.addData("SensorB", SensorBDis);
 //        telemetry.addData("MinDis", MinDis);

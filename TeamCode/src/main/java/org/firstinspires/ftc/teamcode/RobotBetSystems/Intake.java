@@ -10,14 +10,14 @@ public class Intake {
 //    static Intake intake;
 
 //    DcMotor intakeMotor;
-    DistanceSensor SensorA;
-    DistanceSensor SensorB;
+    public DistanceSensor SensorA;
+    public DistanceSensor SensorB;
     double SensorADis;
     double SensorBDis;
     double MinDis;
-    final int Dis = 10;
+    public final int Dis = 10;
     int BallCount = 0;
-    int LastBallDetection = 0;
+    public int LastBallDetection = 0;
 
     public Intake(HardwareMap hardwareMap){
 //        intakeMotor = hardwareMap.dcMotor.get("intakeMotor");
@@ -39,38 +39,34 @@ public class Intake {
          SensorBDis = SensorB.getDistance(DistanceUnit.INCH);
          MinDis = (Dis - SensorADis - SensorBDis) + 2.5;
 
-         if (MinDis > 4.5 && MinDis < 5.3)
+         if (MinDis < 0)
+         {
+             LastBallDetection = 0;
+         }
+         else if (MinDis > 0 && MinDis < 7)
          {
              if(LastBallDetection == 0){
                  BallCount += 1;
                  LastBallDetection = 1;
              }
+         }
+         else if (MinDis > 7)
+         {
+             if(LastBallDetection == 0){
+                 BallCount += 2;
+                 LastBallDetection = 2;
+             }
+             else if(LastBallDetection == 1){
+                 BallCount += 1;
+                 LastBallDetection = 2;
+             }
+         }
 
-         }
-         else if (MinDis > 0 && MinDis < 0.5)
-         {
-             BallCount += 1;
-         }
-         else if (MinDis > 10 && MinDis < 10.6)
-         {
-             BallCount += 2;
-         }
-         else if (MinDis > 5.5 && MinDis < 6)
-         {
-             BallCount += 2;
-         }
-         else if (MinDis > 1.3 && MinDis < 1.6)
-         {
-             BallCount += 2;
-         }
+
 //         if (BallCount >= 3) new
 //         {
 //             BallCount = 0;
 //         }
-         else if (MinDis < 0)
-         {
-             BallCount += 0;
-         }
          return BallCount;
      }
 //    static public Intake getInstance(HardwareMap hardwareMap){
