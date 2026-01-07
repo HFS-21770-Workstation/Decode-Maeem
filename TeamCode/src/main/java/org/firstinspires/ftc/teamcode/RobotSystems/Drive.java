@@ -22,24 +22,19 @@ public class Drive {
 
     public Drive(HardwareMap hardwareMap) {
         imu = hardwareMap.get(IMU.class, "imu");
+
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
         frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
         backLeft = hardwareMap.get(DcMotor.class, "backLeft");
-
-
-        frontRight = hardwareMap.dcMotor.get("Front Right");
-        backRight = hardwareMap.dcMotor.get("Back Right");
-        frontLeft = hardwareMap.dcMotor.get("Front Left");
-        backLeft = hardwareMap.dcMotor.get("Back Left");
 
         frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
         backRight.setDirection(DcMotorSimple.Direction.FORWARD);
         frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+                RevHubOrientationOnRobot.UsbFacingDirection.UP));
         imu.initialize(parameters);
 
         imu.resetYaw();
@@ -69,5 +64,46 @@ public class Drive {
     public void resetIMU(){
         imu.resetYaw();
     }
+
+//    public void wheelControlRobotOriented(double x, double y, double yaw) {
+//        // Calculate wheel powers.
+//        double leftFrontPower    =  x -y -yaw;
+//        double rightFrontPower   =  x +y +yaw;
+//        double leftBackPower     =  x +y -yaw;
+//        double rightBackPower    =  x -y +yaw;
+//
+//        // Normalize wheel powers to be less than 1.0
+//        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+//        max = Math.max(max, Math.abs(leftBackPower));
+//        max = Math.max(max, Math.abs(rightBackPower));
+//
+//        if (max > 1.0) {
+//            leftFrontPower /= max;
+//            rightFrontPower /= max;
+//            leftBackPower /= max;
+//            rightBackPower /= max;
+//        }
+//
+//        // Send powers to the wheels.
+//        frontLeft.setPower(leftFrontPower);
+//        frontRight.setPower(rightFrontPower);
+//        backLeft.setPower(leftBackPower);
+//        backRight.setPower(rightBackPower);
+//    }
+
+    public void wheelControlRobot(double x, double y, double rx){
+        double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
+
+        frontLeft.setPower(frontLeftPower);
+        backLeft.setPower(backLeftPower);
+        frontRight.setPower(frontRightPower);
+        backRight.setPower(backRightPower);
+
+    }
+
 }
 
