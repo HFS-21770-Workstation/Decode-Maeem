@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.Util;
 
 
 public class calculateShootPower {
-
     double[] a;
     private calculateShootPower(double[][] matrix) {
         matrix = diagonalizationMatrix(matrix);
