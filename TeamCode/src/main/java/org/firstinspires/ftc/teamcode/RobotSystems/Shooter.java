@@ -15,14 +15,8 @@ public class Shooter {
     static Shooter shooter;
     Servo servoRight;
     Servo servoLeft;
-    public calculateShootPower calculatePower =  new calculateShootPower.Builder()
-            .addSample(28.48, 13.14, 0.399)
-            .addSample(61.94, 12.93, 0.499)
-            .addSample(122, 12.9, 0.699)
-            .addSample(21.688, 12.84, 0.449)
-            .addSample(125.25, 13.66, 0.599)
-            .addSample(68.62, 13.33, 0.499)
-            .build();
+    calculateShootPower calculatePower;
+
     public Shooter(HardwareMap hardwareMap){
         shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
         shooterMotorDown = hardwareMap.dcMotor.get("shooterDown");
@@ -34,14 +28,29 @@ public class Shooter {
 
     }
 
+    public void startCal(){
+        calculatePower = new calculateShootPower.Builder()
+                .addSample(28.48, 13.14, 0.399)
+                .addSample(61.94, 12.93, 0.499)
+                .addSample(122, 12.9, 0.699)
+                .addSample(21.688, 12.84, 0.449)
+                .addSample(125.25, 13.66, 0.599)
+                .addSample(68.62, 13.33, 0.499)
+                .build();
+    }
+    public void initPos(){
+        servoRight.setPosition(0);
+        servoLeft.setPosition(0);
+    }
 
     public void StartShoot(double power) {
         shooterMotorUp.setPower(power);
         shooterMotorDown.setPower(power);
     }
     public void shootWithAutoPower(double d, double v){
-        shooterMotorUp.setPower(calculatePower.calculate(d,v));
-        shooterMotorDown.setPower(calculatePower.calculate(d,v));
+        double power = calculatePower.calculate(d,v);
+        shooterMotorUp.setPower(power);
+        shooterMotorDown.setPower(power);
     }
     public void StopShoot()
     {
@@ -67,7 +76,7 @@ public class Shooter {
     public enum Angle{
         LOW_DIS(0),
         MID_DIS(0.225),
-        HIGH_DIS(0.55);
+        HIGH_DIS(0.4);
         private double value;
 
 
