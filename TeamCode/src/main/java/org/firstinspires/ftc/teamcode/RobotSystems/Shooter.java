@@ -7,13 +7,22 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Util.calculateShootPower;
+
 public class Shooter {
     DcMotor shooterMotorUp;
     DcMotor shooterMotorDown;
     static Shooter shooter;
     Servo servoRight;
     Servo servoLeft;
-
+    public calculateShootPower calculatePower =  new calculateShootPower.Builder()
+            .addSample(28.48, 13.14, 0.399)
+            .addSample(61.94, 12.93, 0.499)
+            .addSample(122, 12.9, 0.699)
+            .addSample(21.688, 12.84, 0.449)
+            .addSample(125.25, 13.66, 0.599)
+            .addSample(68.62, 13.33, 0.499)
+            .build();
     public Shooter(HardwareMap hardwareMap){
         shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
         shooterMotorDown = hardwareMap.dcMotor.get("shooterDown");
@@ -25,11 +34,15 @@ public class Shooter {
 
     }
 
+
     public void StartShoot(double power) {
         shooterMotorUp.setPower(power);
         shooterMotorDown.setPower(power);
     }
-
+    public void shootWithAutoPower(double d, double v){
+        shooterMotorUp.setPower(calculatePower.calculate(d,v));
+        shooterMotorDown.setPower(calculatePower.calculate(d,v));
+    }
     public void StopShoot()
     {
         shooterMotorUp.setPower(0);
