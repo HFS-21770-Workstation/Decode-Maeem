@@ -15,7 +15,9 @@ public class Shooter {
     static Shooter shooter;
     Servo servoRight;
     Servo servoLeft;
-    calculateShootPower calculatePower;
+    calculateShootPower powerClose;
+    calculateShootPower powerMid;
+    calculateShootPower powerFar;
 
     public Shooter(HardwareMap hardwareMap){
         shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
@@ -29,14 +31,34 @@ public class Shooter {
     }
 
     public void startCal(){
-        calculatePower = new calculateShootPower.Builder()
-                .addSample(28.48, 13.14, 0.399)
-                .addSample(61.94, 12.93, 0.499)
-                .addSample(122, 12.9, 0.699)
-                .addSample(21.688, 12.84, 0.449)
-                .addSample(125.25, 13.66, 0.599)
-                .addSample(68.62, 13.33, 0.499)
+         powerClose = new calculateShootPower.Builder()
+                .addSample(37.19, 12.59, 0.449)
+                .addSample(45.16, 12.45, 0.449)
+                .addSample(58.55, 12.445, 0.449)
+                .addSample(39.0, 13.4, 0.39)
+                .addSample(46.9, 13.1, 0.4)
+                .addSample(47.6, 12.8, 0.44)
                 .build();
+
+         powerMid = new calculateShootPower.Builder()
+                .addSample(71.8, 12.7, 0.49)
+                .addSample(82.34, 12.24, 0.54)
+                .addSample(83.61, 12.41, 0.54)
+                .addSample(85.0, 12.69, 0.549)
+                .addSample(89.1, 12.42, 0.54)
+                .addSample(90.0, 12.7, 0.549)
+                .build();
+
+         powerFar = new calculateShootPower.Builder()
+                .addSample(112.5, 12.5, 0.849)
+                .addSample(119.0, 12.5, 0.79)
+                .addSample(122.0, 13.5, 0.79)
+                .addSample(127.7, 12.6, 0.89)
+                .addSample(127.8, 13.0, 0.74)
+                .addSample(128.01, 14.067, 0.7)
+                .build();
+
+
     }
     public void initPos(){
         servoRight.setPosition(0);
@@ -48,9 +70,14 @@ public class Shooter {
         shooterMotorDown.setPower(power);
     }
     public void shootWithAutoPower(double d, double v){
-        double power = calculatePower.calculate(d,v);
-        shooterMotorUp.setPower(power);
-        shooterMotorDown.setPower(power);
+        if (d < 48 && d > 0) {
+            powerClose.calculate(d, v);
+        }
+        if (d >= 48 && d < 96) {
+            powerMid.calculate(d, v);
+        }
+        if (d > 96 && d < 144) {
+            powerFar.calculate(d, v);        }
     }
     public void StopShoot()
     {
