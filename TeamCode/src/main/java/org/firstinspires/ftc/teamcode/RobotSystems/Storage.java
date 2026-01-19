@@ -7,12 +7,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Util.RGB;
 
+import java.util.Random;
+
 
 public class Storage{
     Servo servoPusher1;
     Servo servoPusher2;
     Servo servoPusher3;
 
+    Random rnd = new Random();
 
     ColorSensor colorSensorA;
     ColorSensor colorSensorB;
@@ -124,6 +127,30 @@ public class Storage{
 //            }
         }
 
+    }
+    public void pusherUp(int index){
+        if (waitingForDown) return;
+        time.reset();
+
+        servoPushers[index].setPosition(UP_POS[index]);
+
+        artifactsStorage[index] = Artifacts.NONE;
+        activePusherIndex = index;
+
+        waitingForDown = true;
+    }
+    public void setOutPutArtifactsRandom(){
+        if (waitingForDown) return;
+        time.reset();
+
+        int i = rnd.nextInt(3);
+
+        servoPushers[i].setPosition(UP_POS[i]);
+
+        artifactsStorage[i] = Artifacts.NONE;
+        activePusherIndex = i;
+
+        waitingForDown = true;
     }
     public void checkTime() {
         if (waitingForDown && time.milliseconds() >= 500) {

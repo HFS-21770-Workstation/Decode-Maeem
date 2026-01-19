@@ -73,7 +73,7 @@ public class Shooter {
     public double GetPower(){
         return shooterMotorUp.getPower();
     }
-    public enum Angle{
+    public static enum Angle{
         LOW_DIS(0),
         MID_DIS(0.225),
         HIGH_DIS(0.4);
@@ -87,7 +87,15 @@ public class Shooter {
         public double getValue(){
             return this.value;
         }
+
+        public Angle next() {
+            Angle[] values = Angle.values();
+            return values[(this.ordinal() + 1) % values.length];
+        }
     }
+
+
+
     public double getServoPositionWithDistance(double dis) {
         if (dis < 48 && dis > 0) {
             return Angle.LOW_DIS.getValue();
