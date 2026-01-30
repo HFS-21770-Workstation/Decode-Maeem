@@ -1,5 +1,10 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -11,7 +16,10 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.RoadRunner.ThreeDeadWheelLocalizer;
 
+@Config
 public class Drive {
     public IMU imu;
 
@@ -20,8 +28,13 @@ public class Drive {
     public DcMotor frontLeft;
     public DcMotor backLeft;
 
-    public Drive(HardwareMap hardwareMap) {
+    public static double inPerTick = 0.0029684340;
+    FtcDashboard dashboard;
+
+    public Drive(HardwareMap hardwareMap, Pose2d initalPose, FtcDashboard dashboard) {
         imu = hardwareMap.get(IMU.class, "imu");
+
+        this.dashboard = dashboard;
 
         frontRight = hardwareMap.get(DcMotor.class, "frontRight");
         backRight = hardwareMap.get(DcMotor.class, "backRight");
@@ -90,6 +103,9 @@ public class Drive {
 //        backLeft.setPower(leftBackPower);
 //        backRight.setPower(rightBackPower);
 //    }
+    public void update(){
+//        dashboard.sendTelemetryPacket(packet);
+    }
 
     public void wheelControlRobot(double x, double y, double rx){
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
@@ -104,6 +120,5 @@ public class Drive {
         backRight.setPower(backRightPower);
 
     }
-
 }
 

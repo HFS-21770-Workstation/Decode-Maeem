@@ -1,32 +1,39 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
 
-import android.sax.StartElementListener;
-
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.Util.PIDControllerB;
 import org.firstinspires.ftc.teamcode.Util.calculateShootPower;
 
-public class Shooter {
-    DcMotor shooterMotorUp;
-    DcMotor shooterMotorDown;
-    static Shooter shooter;
+public class ShooterB {
+    DcMotorEx shooterMotorUp;
+    DcMotorEx shooterMotorDown;
+    static ShooterB shooter;
     Servo servoRight;
     Servo servoLeft;
     calculateShootPower powerClose;
     calculateShootPower powerMid;
     calculateShootPower powerFar;
 
-    public Shooter(HardwareMap hardwareMap){
-        shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
-        shooterMotorDown = hardwareMap.dcMotor.get("shooterDown");
+    double autoPowerFar = 1000;
+
+    public PIDControllerB pidControllerB;
+
+    public double motorVelocity;
+
+    public ShooterB(HardwareMap hardwareMap){
+        shooterMotorUp = hardwareMap.get(DcMotorEx.class, "shooterUp");;
+        shooterMotorDown = hardwareMap.get(DcMotorEx.class, "shooterDown");
 
         shooterMotorUp.setDirection(DcMotorSimple.Direction.FORWARD);
         shooterMotorDown.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -35,7 +42,15 @@ public class Shooter {
         servoRight.setDirection(Servo.Direction.FORWARD);
         servoLeft.setDirection(Servo.Direction.REVERSE);
 
+        pidControllerB = new PIDControllerB();
     }
+
+    public double shootWithPID(double Kp, double Ki, double Kd){
+//        double pidValue = pidControllerB.PIDcontroller(autoPowerFar, shooterMotorUp.getPower(),Kp, Ki, Kd);
+//        return pidValue;
+        return 1;
+    }
+
 
     public void startCal(){
          powerFar = new calculateShootPower.Builder()

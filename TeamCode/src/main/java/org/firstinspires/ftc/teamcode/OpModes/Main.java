@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.RobotSystems.Drive;
@@ -16,7 +18,7 @@ public class Main extends OpMode {
 
     @Override
     public void init() {
-        drive = new Drive(hardwareMap);
+        drive = new Drive(hardwareMap, new Pose2d(0,0, Math.toRadians(-0)), FtcDashboard.getInstance());
         intakeOld = IntakeOld.getInstance(hardwareMap);
         shooter = new Shooter(hardwareMap);
         storage = new Storage(hardwareMap);
@@ -35,7 +37,7 @@ public class Main extends OpMode {
         }
 
         else{
-            intakeOld.stopIntake();
+//            intakeOld.stopIntake();
         }
 
 

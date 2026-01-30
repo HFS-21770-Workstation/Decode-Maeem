@@ -4,7 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-public class PIDController {
+public class PIDControllerB {
 
     public static double Kp = 0.065;
     public static double Ki = 0.00005;
@@ -18,7 +18,7 @@ public class PIDController {
 
     private ElapsedTime timer = new ElapsedTime();
 
-    public PIDController(){
+    public PIDControllerB(){
 
     }
 
@@ -30,7 +30,7 @@ public class PIDController {
         return output;
     }
 
-    public double PIDcontroller(double target, double current){
+    public double PIDcontroller(double target, double current, double Kp, double Ki, double Kd){
         double error = target - current;
 
         // --- ADD THIS SHORTEST PATH LOGIC ---

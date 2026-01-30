@@ -8,6 +8,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -19,6 +20,8 @@ import org.firstinspires.ftc.teamcode.RobotSystems.AprilTagWebCamSystem;
 import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
 
+
+@Disabled
 @TeleOp
 @Config
 public class ShootTest extends OpMode {
@@ -32,6 +35,7 @@ public class ShootTest extends OpMode {
     boolean startShot = false;
     FtcDashboard dashboard = FtcDashboard.getInstance();
 
+    double turretOffset = 0;
 
     MecanumDrive mecanumDrive;
     Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
@@ -50,6 +54,12 @@ public class ShootTest extends OpMode {
         servoPusher1.setPosition(1);
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     }
+
+    @Override
+    public void init_loop(){
+//         storage.somthing =  apriltagWebcamSystem.getObelisk();
+    }
+
     @Override
     public void start(){
         turret.startFunction();
@@ -75,14 +85,21 @@ public class ShootTest extends OpMode {
         turret.update(currentPose);
         aprilTagWebCamSystem.update(currentPose);
 
-        turret.updatePIDAlignment(24);
+        turret.updatePIDAlignment(24, turretOffset);
+
+        if(gamepad2.dpadRightWasPressed()){
+            turretOffset += 1;
+        }
+        if(gamepad2.dpadLeftWasPressed()){
+            turretOffset -= 1;
+        }
 
 
         double distance = aprilTagWebCamSystem.getDistanceFromGoal(24);
         if (gamepad1.bWasPressed()) {
             startShot = !startShot;
             if (startShot) {
-                shooter.shootWithAutoPower(distance, voltageSensor.getVoltage());
+                shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
             } else {
                 shooter.StartShoot(0);
             }

@@ -13,8 +13,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.teamcode.OpModes.driveOpModeBlue;
 import org.firstinspires.ftc.teamcode.OpModes.driveOpModeRed;
+import org.firstinspires.ftc.teamcode.OpModes.driveOpModeRedAutoShooter;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.RobotSystems.IntakeOld;
 import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
@@ -24,8 +24,8 @@ import org.firstinspires.ftc.teamcode.Util.PoseStorage;
 
 
 @Config
-@Autonomous(name = "Blue Far ", group = "Auto")
-public class BlueFarAuto extends LinearOpMode {
+@Autonomous(name = "Red Far ", group = "Auto")
+public class RedFarAuto extends LinearOpMode {
     IntakeOld intake;
     Turret turret;
     Shooter shooter;
@@ -37,14 +37,15 @@ public class BlueFarAuto extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         intake = IntakeOld.getInstance(hardwareMap);
-        Pose2d shootPose = new Pose2d(45.5, -10, Math.toRadians(-180));
+        Pose2d shootPose = new Pose2d(45.5, 10, Math.toRadians(180));
 
-        Pose2d startPose = new Pose2d(61, -15, Math.toRadians(-180));
+        Pose2d startPose = new Pose2d(61, 15, Math.toRadians(180));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
         storage = new Storage(hardwareMap);
         turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
-        driveOpModeBlue.turret = turret;
+        driveOpModeRed.turret = turret;
+        driveOpModeRedAutoShooter.turret = turret;
         shooter = new Shooter(hardwareMap);
         double currentShooterPower;
         shooter.initPos();
@@ -65,35 +66,35 @@ public class BlueFarAuto extends LinearOpMode {
 
                 .splineToLinearHeading(
                         (shootPose),
-                        Math.toRadians(-135),
+                        Math.toRadians(135),
                         new TranslationalVelConstraint(30)
                 )
                 .waitSeconds(0.5)
                 .build();
 
-        Action first_intake = drive.actionBuilder(new Pose2d(61, -14, Math.toRadians(-135)))
+        Action first_intake = drive.actionBuilder(new Pose2d(61, 14, Math.toRadians(135)))
                 .splineToLinearHeading(
-                        new Pose2d(37, -45, Math.toRadians(-90)),
-                        Math.toRadians(-90),
+                        new Pose2d(37, 45, Math.toRadians(90)),
+                        Math.toRadians(90),
                         new TranslationalVelConstraint(50)
                 )
-                .lineToY(-46, (pose, path, v) -> 20)
+                .lineToY(46, (pose, path, v) -> 20)
                 .build();
 
-        Action second_score = drive.actionBuilder(new Pose2d(37, -46, Math.toRadians(-90)))
-                .setTangent(Math.toRadians(-270))
+        Action second_score = drive.actionBuilder(new Pose2d(37, 46, Math.toRadians(90)))
+                .setTangent(Math.toRadians(270))
                 .splineToLinearHeading(
                         shootPose,
-                        Math.toRadians(-135),
+                        Math.toRadians(135),
                         new TranslationalVelConstraint(50)
                 )
                 .waitSeconds(3)
                 .build();
-        Action move_from_park = drive.actionBuilder(new Pose2d(61, -14, Math.toRadians(-135)))
-                .setTangent(Math.toRadians(-135))
+        Action move_from_park = drive.actionBuilder(new Pose2d(61, 14, Math.toRadians(135)))
+                .setTangent(Math.toRadians(135))
                 .splineToLinearHeading(
-                        new Pose2d(40, -16, Math.toRadians(-90)),
-                        Math.toRadians(-135),
+                        new Pose2d(40, 16, Math.toRadians(90)),
+                        Math.toRadians(135),
                         new TranslationalVelConstraint(50)
                 )
                 .build();
@@ -177,7 +178,6 @@ public class BlueFarAuto extends LinearOpMode {
                 storage.initServoAction()
         );
 
-
         Action shoot_sorted;
         try{
             if (sort[0] == Storage.Artifacts.GREEN) {
@@ -192,6 +192,8 @@ public class BlueFarAuto extends LinearOpMode {
             shoot_sorted = shootPPG;
         }
 
+
+
 //        Action final_intake = drive.actionBuilder(new Pose2d(61, 14, Math.toRadians(135)))
 //                .setTangent(Math.toRadians(135))
 //                .splineToLinearHeading(
@@ -203,7 +205,7 @@ public class BlueFarAuto extends LinearOpMode {
 
         Action shootAction =
                 new ParallelAction(
-                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(20),
+                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(24),
                                 voltageSensor.getVoltage(), SHOOT_OFFSET),
 //                        turret.aimTurretAction(drive.localizer.getPose()),
 
@@ -217,7 +219,7 @@ public class BlueFarAuto extends LinearOpMode {
             public void run() {
                 while (opModeIsActive()) {
                     Pose2d pose = drive.localizer.getPose();
-                    turret.updatePIDAlignment(20, 0);
+                    turret.updatePIDAlignment(24, 0);
                     turret.update(pose);
                 }
             }
@@ -225,6 +227,7 @@ public class BlueFarAuto extends LinearOpMode {
 
 
         waitForStart();
+
         for(int i = 0; i < 10 && sort == null; i ++){
             sort = turret.aprilTagWebCamSystem.getObelisk();
         }
@@ -260,9 +263,7 @@ public class BlueFarAuto extends LinearOpMode {
 //            new SequentialAction(
 //                    first_score,
 //                    new ParallelAction(
-//                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(20
-//
-//                        ),
+//                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(24),
 //                            voltageSensor.getVoltage() + SHOOT_OFFSET),
 //                        turret.aimTurretAction(drive.localizer.getPose()),
 //                        shoot_sorted

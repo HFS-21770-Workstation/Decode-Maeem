@@ -1,7 +1,11 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -16,7 +20,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 public class Turret {
     private DcMotorEx yawMotor;
 
-    private double currentPosition;
+    public static double currentPosition;
 
     private final double COUNTS_PER_REVOLUTION = 145.1 * 4;
 
@@ -28,9 +32,9 @@ public class Turret {
 
     public static double currentCameraAngle = 0;
 
-    public static double Kp = 0.08;
-    public static double Ki = 0.03;
-    public static double Kd = 0.013;
+//    public static double Kp = 0.08;
+//    public static double Ki = 0.03;
+//    public static double Kd = 0.013;
 //    public double lastError = 0;
 //    public double lastValue = 0;
 //    public double integralSum = 0;
@@ -47,16 +51,18 @@ public class Turret {
 
     private Telemetry dashboardTelemetry;
 
-    private AprilTagWebCamSystem aprilTagWebCamSystem;
+    public AprilTagWebCamSystem aprilTagWebCamSystem;
 
     public PIDController pidController;
+
+    public static double goalX = -64.98087;
+    public static double goalY = 72;
+
 
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
         this.telemetry = telemetry;
         this.dashboard = dashboard;
         this.dashboardTelemetry = this.dashboard.getTelemetry();
-
-        this.pidController = new PIDController(Kp, Ki, Kd);
 
         yawMotor = hardwareMap.get(DcMotorEx.class, "yawMotor");
         yawMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -92,12 +98,17 @@ public class Turret {
         yawMotor.setPower(power);
     }
 
+    public double getAngle(){
+        return currentPosition;
+    }
+
     public void InitLoop(){
 //        aprilTagWebCamSystem.update();
 //        dashboardTelemetry.update();
     }
 
     public void startFunction(){
+        this.pidController = new PIDController();
         pidController.reset();
     }
 
@@ -111,8 +122,11 @@ public class Turret {
     }
 
     public double getTargetAngleFromEncoder(int id){
-        double goalX = -58.3727;
-        double goalY = (id == 24) ? 55.6425 : -55.6425;
+//        double goalX = -62.98087;
+
+        if(id != 24){
+            goalY = -72;
+        }
 
         // 1. Get Robot position from Road Runner Pose
         double robotX = aprilTagWebCamSystem.pose.position.x;
@@ -134,14 +148,14 @@ public class Turret {
         return AngleUnit.normalizeDegrees(targetAngle);
     }
 
-    public void updatePIDAlignment(int id) {
-        double target = getTargetAngleFromEncoder(id);
+    public void updatePIDAlignment(int id, double offset) {
+        double target = getTargetAngleFromEncoder(id) + offset;
         double current = getCurrentAngleFromEncoder();
 
         double power = pidController.PIDcontroller(target, current);
 
         // Limit power for safety during testing
-        power = Math.max(-0.5, Math.min(0.5, power));
+        power = Math.max(-0.8, Math.min(0.8, power));
 
         yawMotor.setPower(power);
     }
@@ -162,18 +176,23 @@ public class Turret {
         return alpha + beta;
     }
 
+
     public double getCurrentNormalizedAngle(){
         return getCurrentAngleFromEncoder() % 360;
     }
 
     public void displayTelemetry(){
         telemetry.addData("current angle", currentAngleFromEncoder);
-        telemetry.addData("current normilized angle", getCurrentNormalizedAngle());
-        telemetry.addData("currentCameraAngle", currentCameraAngle);
+        telemetry.addData("X", aprilTagWebCamSystem.pose.position.x);
+        telemetry.addData("Y", aprilTagWebCamSystem.pose.position.y);
+//        telemetry.addData("current normilized angle", getCurrentNormalizedAngle());
+//        telemetry.addData("currentCameraAngle", currentCameraAngle);
 
         dashboardTelemetry.addData("current angle", currentAngleFromEncoder);
-        dashboardTelemetry.addData("current normilized angle", getCurrentNormalizedAngle());
-        dashboardTelemetry.addData("currentCameraAngle", currentCameraAngle);
+        dashboardTelemetry.addData("X", aprilTagWebCamSystem.pose.position.x);
+        dashboardTelemetry.addData("Y", aprilTagWebCamSystem.pose.position.y);
+//        dashboardTelemetry.addData("current normilized angle", getCurrentNormalizedAngle());
+//        dashboardTelemetry.addData("currentCameraAngle", currentCameraAngle);
     }
 
     public void rotateWithJoystick(double power) {
@@ -234,4 +253,27 @@ public class Turret {
         MIDDLE_CORRECTING;
     }
 
+
+    public class AimTurretAction implements Action{
+        Pose2d pose;
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            updatePIDAlignment(24,0);
+            update(pose);
+
+            if(pidController.error > -0.5 && pidController.error < 0.5){
+                return false;
+            }
+            return true;
+        }
+
+        public void updatePose(Pose2d newPose){
+            pose = newPose;
+        }
+    }
+    public Action aimTurretAction(Pose2d curPose){
+        AimTurretAction retAction = new AimTurretAction();
+        retAction.pose = curPose;
+        return retAction;
+    }
 }

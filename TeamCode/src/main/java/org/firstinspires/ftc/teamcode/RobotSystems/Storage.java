@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
+import androidx.annotation.NonNull;
+
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -33,8 +37,8 @@ public class Storage{
     public Servo[] servoPushers;
     ElapsedTime time = new ElapsedTime();
     int activePusherIndex = -1;
-    final double[] UP_POS   = {1, 0, 1};
-    final double[] DOWN_POS = {0, 1, 0};
+    final double[] UP_POS   = {1, 1, 0};
+    final double[] DOWN_POS = {0, 0, 1};
 
     public Storage(HardwareMap hardwareMap) {
         colorSensorA = hardwareMap.colorSensor.get("colorSensorA");
@@ -43,7 +47,7 @@ public class Storage{
         servoPusher1 = hardwareMap.servo.get("servoPusher1");
         servoPusher2 = hardwareMap.servo.get("servoPusher2");
         servoPusher3 = hardwareMap.servo.get("servoPusher3");
-        servoPushers = new Servo[] {servoPusher2 , servoPusher3, servoPusher1};
+        servoPushers = new Servo[] {servoPusher2 , servoPusher1, servoPusher3};
     }
 
 
@@ -74,8 +78,8 @@ public class Storage{
 
     public void updateColorSensors(){
         artifactsStorage[0] = getColor(colorSensorA);
-        artifactsStorage[1] = getColor(colorSensorB);
-        artifactsStorage[2] = getColor(colorSensorC);
+        artifactsStorage[2] = getColor(colorSensorB);
+        artifactsStorage[1] = getColor(colorSensorC);
     }
 
     public static enum Artifacts {
@@ -183,4 +187,105 @@ public class Storage{
         }
        return storage;
     }
+
+    public class OutputArtifactGreen implements Action{
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            int i;
+            boolean foundBall = false;
+//            initServos();
+            updateColorSensors();
+            for(i = 0; i <= 2; i++){
+                if(artifactsStorage[i] == Artifacts.GREEN && !foundBall){
+                    servoPushers[i].setPosition(UP_POS[i]);
+                    artifactsStorage[i] = Artifacts.NONE;
+                    foundBall = true;
+                    return false;
+
+                }
+            }
+            return false;
+        }
     }
+    public boolean hasArtifacts() {
+        for (int i = 0; i < 3 ; i++) {
+            if (artifactsStorage[i] != Artifacts.NONE) return true;
+        }
+        return false;
+    }
+    public Action outPutArtifactGreen(){
+        return new OutputArtifactGreen();
+    }
+
+
+    public class OutputArtifactPurple implements Action{
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            int i;
+            boolean foundBall = false;
+//            initServos();
+            updateColorSensors();
+            for(i = 0; i <= 2; i++){
+                if(artifactsStorage[i] == Artifacts.PURPLE && !foundBall){
+                    servoPushers[i].setPosition(UP_POS[i]);
+                    artifactsStorage[i] = Artifacts.NONE;
+                    foundBall = true;
+                    return false;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public Action outPutArtifactPurple(){
+        return new OutputArtifactPurple();
+    }
+
+    public class OutputArtifactsByIndex implements Action{
+        int i;
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            servoPushers[i].setPosition(UP_POS[i]);
+            artifactsStorage[i] = Artifacts.NONE;
+            return false;
+        }
+    }
+    public Action outputArtifactsByIndex(int index){
+        OutputArtifactsByIndex retAction = new OutputArtifactsByIndex();
+        retAction.i = index;
+        return retAction;
+    }
+
+    public class UpdateColorSensorsAction implements Action{
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            updateColorSensors();
+            return false;
+        }
+    }
+    public Action updateColorSensorsAction(){
+        return new UpdateColorSensorsAction();
+    }
+
+
+
+
+
+
+    public class InitServoAction implements Action{
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            initServos();
+            return false;
+        }
+    }
+    public Action initServoAction(){
+        return new InitServoAction();
+    }
+}

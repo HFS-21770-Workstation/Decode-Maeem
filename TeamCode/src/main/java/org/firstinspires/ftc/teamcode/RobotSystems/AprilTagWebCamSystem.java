@@ -8,6 +8,7 @@ import android.util.Size;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 public class AprilTagWebCamSystem {
-    // final CameraStreamProcessor processor = new CameraStreamProcessor();
+//     final CameraStreamProcessor processor = new CameraStreamProcessor();
 
     private AprilTagProcessor aprilTagProcessor;
 
@@ -41,7 +42,7 @@ public class AprilTagWebCamSystem {
     private List<AprilTagDetection> detectedTags = new ArrayList<>();
 
     Position cameraPosition = new Position(DistanceUnit.INCH, 0, 0, 0, 0);
-    YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, 180, 0);
+    YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, 0, 0);
 
     private Telemetry telemetry;
 
@@ -49,12 +50,13 @@ public class AprilTagWebCamSystem {
 
     private Telemetry dashboardTelemetry;
 
-    public AprilTagWebCamSystem(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard){
+    public Pose2d pose;
+
+    public AprilTagWebCamSystem(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
         this.telemetry = telemetry;
         this.dashboard = dashboard;
         this.dashboardTelemetry = this.dashboard.getTelemetry();
-
-        // dashboard.startCameraStream(processor, 30);
+        this.pose = startPose;
 
         aprilTagProcessor = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
@@ -70,12 +72,13 @@ public class AprilTagWebCamSystem {
         builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
         builder.setCameraResolution(new Size(640, 480));
         builder.addProcessor(aprilTagProcessor);
-        // builder.addProcessor(processor);
+//        builder.addProcessor(processor);
 
         visionPortal = builder.build();
     }
 
-    public void update(){
+    public void update(Pose2d currentPose){
+        this.pose = currentPose;
         detectedTags = aprilTagProcessor.getDetections();
         telemetry.update();
         dashboardTelemetry.update();
@@ -150,6 +153,47 @@ public class AprilTagWebCamSystem {
         return Math.sqrt(Math.pow(detection.ftcPose.range, 2) -
                 264.0625) + 8.16141732;
         // 870.25 is The height of the april tag squared in inch
+    }
+
+    public double getDistanceFromGoal(int id){
+        double goalX;
+        double goalY;
+        if(id == 24){
+            goalX = -58.3727;
+            goalY = 55.6425;
+        }
+        else{
+            goalX = -58.3727;
+            goalY = -55.6425;
+        }
+        double robotX = pose.position.x;
+        double robotY = pose.position.y;
+
+        double deltaX = robotX - goalX;
+        double deltaY = robotY - goalY;
+
+        return Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+
+    }
+
+    public Storage.Artifacts[] getObelisk(){
+        if(detectedTags == null){
+            return null;
+        }
+        for (AprilTagDetection detection : detectedTags){
+            if (detection.id == 21){
+                return new Storage.Artifacts[] {Storage.Artifacts.GREEN, Storage.Artifacts.PURPLE, Storage.Artifacts.PURPLE};
+            }
+            if(detection.id == 22){
+                return new Storage.Artifacts[] {Storage.Artifacts.PURPLE, Storage.Artifacts.GREEN, Storage.Artifacts.PURPLE};
+            }
+            if(detection.id == 23){
+                return new Storage.Artifacts[] {Storage.Artifacts.PURPLE, Storage.Artifacts.PURPLE, Storage.Artifacts.GREEN};
+            }
+
+        }
+        return null;
+
     }
 
 //    public static class CameraStreamProcessor implements VisionProcessor, CameraStreamSource {
