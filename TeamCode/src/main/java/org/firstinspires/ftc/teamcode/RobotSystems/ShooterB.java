@@ -14,11 +14,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Util.PIDControllerB;
 import org.firstinspires.ftc.teamcode.Util.calculateShootPower;
+import org.firstinspires.ftc.teamcode.Util.Enums.Angle;
 
 public class ShooterB {
     DcMotorEx shooterMotorUp;
     DcMotorEx shooterMotorDown;
-    static ShooterB shooter;
+    private static ShooterB INSTANCE;
     Servo servoRight;
     Servo servoLeft;
     calculateShootPower powerClose;
@@ -31,7 +32,7 @@ public class ShooterB {
 
     public double motorVelocity;
 
-    public ShooterB(HardwareMap hardwareMap){
+    private ShooterB(HardwareMap hardwareMap){
         shooterMotorUp = hardwareMap.get(DcMotorEx.class, "shooterUp");;
         shooterMotorDown = hardwareMap.get(DcMotorEx.class, "shooterDown");
 
@@ -43,6 +44,13 @@ public class ShooterB {
         servoLeft.setDirection(Servo.Direction.REVERSE);
 
         pidControllerB = new PIDControllerB();
+    }
+
+    public static ShooterB getInstance(HardwareMap hardwareMap){
+        if(INSTANCE == null){
+            INSTANCE = new ShooterB(hardwareMap);
+        }
+        return INSTANCE;
     }
 
     public double shootWithPID(double Kp, double Ki, double Kd){
@@ -124,26 +132,7 @@ public class ShooterB {
     public double GetPower(){
         return shooterMotorUp.getPower();
     }
-    public static enum Angle{
-        LOW_DIS(0),
-        MID_DIS(0.225),
-        HIGH_DIS(0.5);
-        private double value;
 
-
-        Angle(double value) {
-            this.value = value;
-        }
-
-        public double getValue(){
-            return this.value;
-        }
-
-        public Angle next() {
-            Angle[] values = Angle.values();
-            return values[(this.ordinal() + 1) % values.length];
-        }
-    }
 
 
 

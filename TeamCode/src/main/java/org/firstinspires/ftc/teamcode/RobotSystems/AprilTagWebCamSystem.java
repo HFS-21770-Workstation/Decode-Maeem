@@ -25,6 +25,8 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.VisionProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 import org.opencv.core.Mat;
 
 import java.util.ArrayList;
@@ -88,9 +90,9 @@ public class AprilTagWebCamSystem {
         return detectedTags;
     }
 
-    public AprilTagDetection getDetectionByID(int id){
+    public AprilTagDetection getDetectionByID(GoalColor goalColor){
         for (AprilTagDetection detection : detectedTags){
-            if (detection.id == id){
+            if (detection.id == goalColor.getValue()){
                 return detection;
             }
         }
@@ -128,25 +130,23 @@ public class AprilTagWebCamSystem {
     ///
     /// RET VALUE: x, y, rx
     ///
-    public double[] getRobotPoseByID(int id){
+    public double[] getRobotPoseByID(GoalColor goalColor) {
         double[] retValue = new double[3];
 
-        AprilTagDetection detection = this.getDetectionByID(id);
-        if(detection != null){
+        AprilTagDetection detection = this.getDetectionByID(goalColor);
+        if (detection != null) {
 
             retValue[0] = detection.robotPose.getPosition().x;
             retValue[1] = detection.robotPose.getPosition().y;
             retValue[2] = detection.robotPose.getOrientation().getYaw();
             return retValue;
-        }
-        else{
+        } else {
             return null;
         }
-
     }
 
-    public double getDistanceFromTag(int id){
-        AprilTagDetection detection = getDetectionByID(id);
+    public double getDistanceFromTag(GoalColor goalColor){
+        AprilTagDetection detection = getDetectionByID(goalColor);
         if(detection == null){
             return -1;
         }
@@ -155,10 +155,10 @@ public class AprilTagWebCamSystem {
         // 870.25 is The height of the april tag squared in inch
     }
 
-    public double getDistanceFromGoal(int id){
+    public double getDistanceFromGoal(GoalColor goalColor){
         double goalX;
         double goalY;
-        if(id == 24){
+        if(goalColor.getValue() == 24){
             goalX = -58.3727;
             goalY = 55.6425;
         }
@@ -176,19 +176,19 @@ public class AprilTagWebCamSystem {
 
     }
 
-    public Storage.Artifacts[] getObelisk(){
+    public Artifacts[] getObelisk(){
         if(detectedTags == null){
             return null;
         }
         for (AprilTagDetection detection : detectedTags){
             if (detection.id == 21){
-                return new Storage.Artifacts[] {Storage.Artifacts.GREEN, Storage.Artifacts.PURPLE, Storage.Artifacts.PURPLE};
+                return new Artifacts[] {Artifacts.GREEN, Artifacts.PURPLE, Artifacts.PURPLE};
             }
             if(detection.id == 22){
-                return new Storage.Artifacts[] {Storage.Artifacts.PURPLE, Storage.Artifacts.GREEN, Storage.Artifacts.PURPLE};
+                return new Artifacts[] {Artifacts.PURPLE, Artifacts.GREEN, Artifacts.PURPLE};
             }
             if(detection.id == 23){
-                return new Storage.Artifacts[] {Storage.Artifacts.PURPLE, Storage.Artifacts.PURPLE, Storage.Artifacts.GREEN};
+                return new Artifacts[] {Artifacts.PURPLE, Artifacts.PURPLE, Artifacts.GREEN};
             }
 
         }

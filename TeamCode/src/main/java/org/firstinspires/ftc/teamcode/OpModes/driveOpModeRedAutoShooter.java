@@ -19,6 +19,8 @@ import org.firstinspires.ftc.teamcode.RobotSystems.ShooterB;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
 import org.firstinspires.ftc.teamcode.Util.PoseStorage;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 
 import java.util.logging.Handler;
 
@@ -64,9 +66,9 @@ public class driveOpModeRedAutoShooter extends OpMode {
     @Override
     public void init() {
         mecanumDrive = new MecanumDrive(hardwareMap, startPose);
-        storage = new Storage(hardwareMap);
+        storage = Storage.getInstance(hardwareMap);
 
-        shooter = new ShooterB(hardwareMap);
+        shooter = ShooterB.getInstance(hardwareMap);
         shooter.ChangeAngle(0,0);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
@@ -90,9 +92,9 @@ public class driveOpModeRedAutoShooter extends OpMode {
 
         turret.aprilTagWebCamSystem.update(currentPose);
         turret.update(currentPose);
-        turret.updatePIDAlignment(24, turretOffset);
+        turret.updatePIDAlignment(GoalColor.RED, turretOffset);
 
-        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(24);
+        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
         shooter.ChangeAngle(shooter.getServoPositionWithDistance(distance),
                 shooter.getServoPositionWithDistance(distance));
 
@@ -214,13 +216,13 @@ public class driveOpModeRedAutoShooter extends OpMode {
             if(shooter.GetPower() == 1){
                 shooter.StartShoot(1);
             }
-            storage.setOutPutArtifacts(Storage.Artifacts.GREEN);
+            storage.setOutPutArtifacts(Artifacts.GREEN);
         }
         else if (gamepad1.b && startShot) {
             if(shooter.GetPower() == 1){
                 shooter.StartShoot(1);
             }
-            storage.setOutPutArtifacts(Storage.Artifacts.PURPLE);
+            storage.setOutPutArtifacts(Artifacts.PURPLE);
         }
         else if(gamepad1.y && startShot){
             if(shooter.GetPower() == 1){

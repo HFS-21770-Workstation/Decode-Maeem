@@ -18,9 +18,11 @@ import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
 import org.firstinspires.ftc.teamcode.Util.PoseStorage;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 
 
-@TeleOp(group = "TeleOps",name = "TeleOp Blue")
+@TeleOp(group = "TeleOps",name = "00 TeleOp Blue")
 public class driveOpModeBlue extends OpMode {
     Storage storage;
     Shooter shooter;
@@ -54,14 +56,14 @@ public class driveOpModeBlue extends OpMode {
     public void init() {
         if(startPose == null){
             startPose = new Pose2d(40, -16, Math.toRadians(-90));
-            turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
+            turret = Turret.getInstance(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
         }
 
         mecanumDrive = new MecanumDrive(hardwareMap, startPose);
-        storage = new Storage(hardwareMap);
+        storage = Storage.getInstance(hardwareMap);
 
-        shooter = new Shooter(hardwareMap);
-        shooter.ChangeAngle(0,0);
+//        shooter = Shooter.getInstance(hardwareMap);
+//        shooter.changeAngle(0,0);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
 
@@ -76,7 +78,7 @@ public class driveOpModeBlue extends OpMode {
     @Override
     public void start(){
         turret.startFunction();
-        shooter.startCal();
+//        shooter.startCal();
     }
 
     @Override
@@ -86,11 +88,11 @@ public class driveOpModeBlue extends OpMode {
 
         turret.aprilTagWebCamSystem.update(currentPose);
         turret.update(currentPose);
-        turret.updatePIDAlignment(20, turretOffset);
+        turret.updatePIDAlignment(GoalColor.BLUE, turretOffset);
 
-        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(20);
-        shooter.ChangeAngle(shooter.getServoPositionWithDistance(distance),
-                shooter.getServoPositionWithDistance(distance));
+        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.BLUE);
+//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
+//                shooter.getServoPositionWithDistance(distance));
 
 
         double x = -gamepad1.left_stick_y;
@@ -130,20 +132,9 @@ public class driveOpModeBlue extends OpMode {
         // 6. Send everything to Dashboard
         dashboard.sendTelemetryPacket(packet);
 
-        // Optional: Keep your phone telemetry alive
-//        telemetry.addData("X", currentPose.position.x);
-//        telemetry.addData("Y", currentPose.position.y);
         telemetry.addData("Turret Offset", turretOffset);
         telemetry.addData("Shooter Offset", shooterOffset);
         telemetry.update();
-
-
-//        if(gamepad1.a && shooter.GetPower() == 0){
-//            shooter.StartShoot(0.67);
-//        }
-//        if(gamepad1.a && shooter.GetPower() == 0){
-//            shooter.StopShoot();
-//        }
 
         if (gamepad1.aWasPressed()) {
             startShot = !startShot;
@@ -151,7 +142,7 @@ public class driveOpModeBlue extends OpMode {
 
         if (startShot) {
             if(distance > 100){
-                currentShooterPower = shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), -shooterOffset);
+//                currentShooterPower = shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), -shooterOffset);
             }
             else{
                 if(gamepad1.dpadLeftWasPressed()){
@@ -171,36 +162,36 @@ public class driveOpModeBlue extends OpMode {
             else if(currentShooterPower < -1){
                 currentShooterPower = -1;
             }
-            shooter.StartShoot(currentShooterPower);
+//            shooter.startShoot(currentShooterPower);
         }
         else{
-            shooter.StopShoot();
+            shooter.stopShoot();
         }
 
 
         if (gamepad1.left_trigger == 1){
-            shooter.StopShoot();
+            shooter.stopShoot();
         }
-        shooter.ChangeAngle(shooter.getServoPositionWithDistance(distance),
-                shooter.getServoPositionWithDistance(distance));
+//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
+//                shooter.getServoPositionWithDistance(distance));
 
 
 
         if(gamepad1.x && startShot){
-            if(shooter.GetPower() == 1){
-                shooter.StartShoot(1);
+            if(shooter.getPower() == 1){
+//                shooter.startShoot(1);
             }
-            storage.setOutPutArtifacts(Storage.Artifacts.GREEN);
+            storage.setOutPutArtifacts(Artifacts.GREEN);
         }
         else if (gamepad1.b && startShot) {
-            if(shooter.GetPower() == 1){
-                shooter.StartShoot(1);
+            if(shooter.getPower() == 1){
+//                shooter.startShoot(1);
             }
-            storage.setOutPutArtifacts(Storage.Artifacts.PURPLE);
+            storage.setOutPutArtifacts(Artifacts.PURPLE);
         }
         else if(gamepad1.y && startShot){
-            if(shooter.GetPower() == 1){
-                shooter.StartShoot(1);
+            if(shooter.getPower() == 1){
+//                shooter.startShoot(1);
             }
             storage.setOutPutArtifactsRandom(); // this thing wasn't checked
         }
@@ -219,26 +210,13 @@ public class driveOpModeBlue extends OpMode {
         }
         intake.startIntake(intakePower);
         intake.updateIntake();
-//        if(gamepad1.dpad_down && intake.getPower() == 0){
-//            intake.startIntake(1);
-//        }
-//        if(gamepad1.dpad_down && intake.getPower() == 1){
-//            intake.stopIntake();
-//        }
-//        if(gamepad1.dpad_up && intake.getPower() == 0){
-//            intake.startIntake(-1);
-//        }
-//        if(gamepad1.dpad_up && intake.getPower() == -1) {
-//            intake.stopIntake();
-//        }
 
-//        shooter.StartShoot(gamepad2.right_stick_y);
-        if (gamepad2.dpadUpWasPressed()) {
-            shooter.ChangeAngle(shooter.GetPosR() + pos, shooter.GetPosL() + pos);
-        }
-        if (gamepad2.dpadDownWasPressed()) {
-            shooter.ChangeAngle(shooter.GetPosR() - pos, shooter.GetPosL() - pos);
-        }
+//        if (gamepad2.dpadUpWasPressed()) {
+//            shooter.changeAngle(shooter.getPosR() + pos, shooter.getPosL() + pos);
+//        }
+//        if (gamepad2.dpadDownWasPressed()) {
+//            shooter.changeAngle(shooter.getPosR() - pos, shooter.getPosL() - pos);
+//        }
         if(gamepad2.a) {
             storage.pusherUp(0);
         }
@@ -283,7 +261,7 @@ public class driveOpModeBlue extends OpMode {
 
     @Override
     public void stop(){
-        shooter.StopShoot();
+        shooter.stopShoot();
     }
 
 }

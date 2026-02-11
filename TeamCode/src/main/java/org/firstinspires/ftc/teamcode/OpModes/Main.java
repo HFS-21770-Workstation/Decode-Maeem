@@ -2,13 +2,16 @@ package org.firstinspires.ftc.teamcode.OpModes;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.RobotSystems.Drive;
 import org.firstinspires.ftc.teamcode.RobotSystems.IntakeOld;
 import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 
+@Disabled
 public class Main extends OpMode {
 
     Drive drive;
@@ -20,8 +23,8 @@ public class Main extends OpMode {
     public void init() {
         drive = new Drive(hardwareMap, new Pose2d(0,0, Math.toRadians(-0)), FtcDashboard.getInstance());
         intakeOld = IntakeOld.getInstance(hardwareMap);
-        shooter = new Shooter(hardwareMap);
-        storage = new Storage(hardwareMap);
+//        shooter = Shooter.getInstance(hardwareMap);
+        storage = Storage.getInstance(hardwareMap);
     }
 
     @Override
@@ -41,16 +44,16 @@ public class Main extends OpMode {
         }
 
 
-        shooter.StartShoot(gamepad1.left_trigger);
+//        shooter.startShoot(gamepad1.left_trigger);
 
 
 
         if (gamepad1.a){
-            storage.setOutPutArtifacts(Storage.Artifacts.PURPLE);
+            storage.setOutPutArtifacts(Artifacts.PURPLE);
         }
 
         if (gamepad1.b){
-            storage.setOutPutArtifacts(Storage.Artifacts.PURPLE);
+            storage.setOutPutArtifacts(Artifacts.PURPLE);
         }
 
 

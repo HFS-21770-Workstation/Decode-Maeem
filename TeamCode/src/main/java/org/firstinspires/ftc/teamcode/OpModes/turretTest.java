@@ -8,19 +8,18 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.HardwareDevice;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.RoadRunner.Drawing;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
-import org.firstinspires.ftc.teamcode.RobotSystems.AprilTagWebCamSystem;
-import org.firstinspires.ftc.teamcode.RobotSystems.Drive;
 import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 
 @TeleOp
 @Config
@@ -49,7 +48,7 @@ public class turretTest extends OpMode {
     public void start(){
 
         turret.startFunction();
-        shooter.startCal();
+//        shooter.startCal();
     }
 
     @Override
@@ -58,14 +57,14 @@ public class turretTest extends OpMode {
         mecanumDrive = new MecanumDrive(hardwareMap, startPose);
 
         // Initialize Turret
-        turret = new Turret(hardwareMap, telemetry, dashboard, startPose);
+        turret = Turret.getInstance(hardwareMap, telemetry, dashboard, startPose);
 
-        shooter = new Shooter(hardwareMap);
-        shooter.initPos();
+//        shooter = Shooter.getInstance(hardwareMap);
+//        shooter.initPos();
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        storage = new Storage(hardwareMap);
+        storage = Storage.getInstance(hardwareMap);
         storage.initServos();
 
 //        aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
@@ -79,7 +78,7 @@ public class turretTest extends OpMode {
     public void loop() {
 
         mecanumDrive.updatePoseEstimate();
-        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(24);
+        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
 
 
         Pose2d currentPose = mecanumDrive.localizer.getPose();
@@ -97,7 +96,7 @@ public class turretTest extends OpMode {
         turret.update(currentPose);
         turret.aprilTagWebCamSystem.update(currentPose);
 
-        turret.updatePIDAlignment(24, turretOffset);
+        turret.updatePIDAlignment(GoalColor.RED, turretOffset);
 
         if(gamepad2.dpadRightWasPressed()){
             turretOffset += 1;
@@ -109,14 +108,14 @@ public class turretTest extends OpMode {
         if (gamepad1.yWasPressed()) {
             startShot = !startShot;
             if (!startShot) {
-                shooter.StartShoot(0);
+//                shooter.startShoot(0);
             }
         }
 
 
         if (startShot) {
-            double currentPower = shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
-            shooter.StartShoot(currentPower);
+//            double currentPower = shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
+//            shooter.startShoot(currentPower);
         }
 
 //        if(gamepad1.yWasPressed()){
@@ -126,10 +125,10 @@ public class turretTest extends OpMode {
 //            shooter.StartShoot(shooter.GetPower() - power);
 //        }
         if (gamepad1.right_trigger == 1){
-            shooter.StopShoot();
+            shooter.stopShoot();
         }
-        shooter.ChangeAngle(shooter.getServoPositionWithDistance(distance),
-                shooter.getServoPositionWithDistance(distance));
+//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
+//                shooter.getServoPositionWithDistance(distance));
 
 //        if (gamepad1.dpadUpWasPressed()) {
 //            shooter.ChangeAngle(shooter.GetPosR() + pos, shooter.GetPosL() + pos);
@@ -144,12 +143,12 @@ public class turretTest extends OpMode {
             storage.updateColorSensors();
         }
         if(gamepad1.xWasPressed()){
-            storage.setOutPutArtifacts(Storage.Artifacts.PURPLE);
+            storage.setOutPutArtifacts(Artifacts.PURPLE);
 
 
         }
         if(gamepad1.bWasPressed()){
-            storage.setOutPutArtifacts(Storage.Artifacts.GREEN);
+            storage.setOutPutArtifacts(Artifacts.GREEN);
 
         }
 //        telemetry.addData("slots1", storage.getArtifactsStorage()[0]);
@@ -181,10 +180,10 @@ public class turretTest extends OpMode {
         // Optional: Keep your phone telemetry alive
 //        telemetry.addData("X", currentPose.position.x);
 //        telemetry.addData("Y", currentPose.position.y);
-        telemetry.addData("target angle:", turret.getTargetAngleFromEncoder(24));
+        telemetry.addData("target angle:", turret.getTargetAngleFromEncoder(GoalColor.RED));
         telemetry.addData("error:", turret.pidController.getError());
 //        telemetry.addData("output", turret.pidController.getOutput());
-        telemetry.addData("Power:", shooter.GetPower());
+        telemetry.addData("Power:", shooter.getPower());
         telemetry.addData("Volt:", voltageSensor.getVoltage());
         telemetry.addData("distance:", distance);
         telemetry.update();
@@ -192,6 +191,6 @@ public class turretTest extends OpMode {
 
     @Override
     public void stop(){
-        shooter.StopShoot();
+        shooter.stopShoot();
     }
 }

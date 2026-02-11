@@ -21,6 +21,9 @@ import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
 import org.firstinspires.ftc.teamcode.Util.PoseStorage;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
+
 
 
 @Config
@@ -30,7 +33,7 @@ public class RedFarAuto extends LinearOpMode {
     Turret turret;
     Shooter shooter;
     Storage storage;
-    Storage.Artifacts[] sort = null;
+    Artifacts[] sort = null;
     VoltageSensor voltageSensor;
     public static double SHOOT_OFFSET = 0.155;
 
@@ -42,14 +45,14 @@ public class RedFarAuto extends LinearOpMode {
         Pose2d startPose = new Pose2d(61, 15, Math.toRadians(180));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
-        storage = new Storage(hardwareMap);
-        turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
+        storage = Storage.getInstance(hardwareMap);
+        turret = Turret.getInstance(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
         driveOpModeRed.turret = turret;
         driveOpModeRedAutoShooter.turret = turret;
-        shooter = new Shooter(hardwareMap);
+//        shooter = Shooter.getInstance(hardwareMap);
         double currentShooterPower;
-        shooter.initPos();
-        shooter.startCal();
+//        shooter.initPos();
+//        shooter.startCal();
         storage.initServos();
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
@@ -180,9 +183,9 @@ public class RedFarAuto extends LinearOpMode {
 
         Action shoot_sorted;
         try{
-            if (sort[0] == Storage.Artifacts.GREEN) {
+            if (sort[0] == Artifacts.GREEN) {
                 shoot_sorted = shootGPP;
-            } else if (sort[1] == Storage.Artifacts.GREEN) {
+            } else if (sort[1] == Artifacts.GREEN) {
                 shoot_sorted = shootPGP;
             } else {
                 shoot_sorted = shootPPG;
@@ -203,23 +206,23 @@ public class RedFarAuto extends LinearOpMode {
 //                )
 //                .build();
 
-        Action shootAction =
-                new ParallelAction(
-                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(24),
-                                voltageSensor.getVoltage(), SHOOT_OFFSET),
-//                        turret.aimTurretAction(drive.localizer.getPose()),
-
-                        shoot_sorted,
-                        storage.updateColorSensorsAction()
-
-                );
+        Action shootAction;
+//                new ParallelAction(
+//                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED),
+//                                voltageSensor.getVoltage(), SHOOT_OFFSET),
+////                        turret.aimTurretAction(drive.localizer.getPose()),
+//
+//                        shoot_sorted,
+//                        storage.updateColorSensorsAction()
+//
+//                );
 
         Thread alighnTurret = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (opModeIsActive()) {
                     Pose2d pose = drive.localizer.getPose();
-                    turret.updatePIDAlignment(24, 0);
+                    turret.updatePIDAlignment(GoalColor.RED, 0);
                     turret.update(pose);
                 }
             }
@@ -242,8 +245,8 @@ public class RedFarAuto extends LinearOpMode {
 ////                        turret.aimTurretAction(drive.localizer.getPose()),
 //                         new SleepAction(3),
                         new SequentialAction(
-                                first_score,
-                                shootAction
+                                first_score
+//                                shootAction
                         )
                 )
         );
@@ -253,7 +256,7 @@ public class RedFarAuto extends LinearOpMode {
 
         Actions.runBlocking(
                 new SequentialAction(
-                        shootAction,
+//                        shootAction,
                         new SleepAction(2)
                 )
         );

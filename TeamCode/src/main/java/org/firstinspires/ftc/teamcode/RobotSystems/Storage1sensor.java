@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Util.RGB;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 
 @Config
 public class Storage1sensor {
@@ -67,13 +68,6 @@ public class Storage1sensor {
 
     public void stopStartSorting(){
         sort = !sort;
-    }
-
-
-    public enum Artifacts {
-        GREEN,
-        PURPLE,
-        NONE
     }
 
     public Artifacts getColor(ColorSensor colorSensor){

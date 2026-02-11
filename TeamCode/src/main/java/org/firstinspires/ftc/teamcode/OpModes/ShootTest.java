@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
@@ -21,9 +22,9 @@ import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
 
 
-@Disabled
 @TeleOp
 @Config
+@Disabled
 public class ShootTest extends OpMode {
     Shooter shooter;
     Turret turret;
@@ -44,9 +45,9 @@ public class ShootTest extends OpMode {
     public void init() {
         mecanumDrive = new MecanumDrive(hardwareMap, startPose);
         aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
-        shooter =  new Shooter(hardwareMap);
-        shooter.ChangeAngle(0,0);
-        turret = new Turret(hardwareMap, telemetry, dashboard, startPose);
+//        shooter =  Shooter.getInstance(hardwareMap);
+//        shooter.changeAngle(0,0);
+        turret = Turret.getInstance(hardwareMap, telemetry, dashboard, startPose);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         telemetry = FtcDashboard.getInstance().getTelemetry();
 
@@ -63,7 +64,7 @@ public class ShootTest extends OpMode {
     @Override
     public void start(){
         turret.startFunction();
-        shooter.startCal();
+//        shooter.startCal();
     }
 
     @Override
@@ -85,7 +86,7 @@ public class ShootTest extends OpMode {
         turret.update(currentPose);
         aprilTagWebCamSystem.update(currentPose);
 
-        turret.updatePIDAlignment(24, turretOffset);
+        turret.updatePIDAlignment(GoalColor.RED, turretOffset);
 
         if(gamepad2.dpadRightWasPressed()){
             turretOffset += 1;
@@ -95,13 +96,13 @@ public class ShootTest extends OpMode {
         }
 
 
-        double distance = aprilTagWebCamSystem.getDistanceFromGoal(24);
+        double distance = aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
         if (gamepad1.bWasPressed()) {
             startShot = !startShot;
             if (startShot) {
-                shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
+//                shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
             } else {
-                shooter.StartShoot(0);
+//                shooter.startShoot(0);
             }
         }
 
@@ -109,8 +110,8 @@ public class ShootTest extends OpMode {
 //        if(distance == -1){
 //            shooter.ChangeAngle(shooter.GetPosR(),shooter.GetPosL());
 //        }
-        shooter.ChangeAngle(shooter.getServoPositionWithDistance(distance),
-                shooter.getServoPositionWithDistance(distance));
+//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
+//                shooter.getServoPositionWithDistance(distance));
 //        if (startShot) {
 //            if (gamepad1.yWasPressed()) {
 //                shooter.StartShoot(shooter.GetPower() + 0.025);
@@ -128,13 +129,13 @@ public class ShootTest extends OpMode {
         else{
             servoPusher1.setPosition(1);
         }
-        telemetry.addData("Power:", shooter.GetPower());
+        telemetry.addData("Power:", shooter.getPower());
 //        telemetry.addData("PosL:", shooter.GetPosL());
 //        telemetry.addData("PosR:", shooter.GetPosR());
         telemetry.addData("Volt:", voltageSensor.getVoltage());
 //        String distanceStr = "Distance: " + String.format("%.3f", distance);
 //        telemetry.addLine(distanceStr);
-        telemetry.addData("d",aprilTagWebCamSystem.getDistanceFromGoal(24));
+        telemetry.addData("d",aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED));
 
         telemetry.addData("start shoot", startShot);
 

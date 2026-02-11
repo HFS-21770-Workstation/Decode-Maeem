@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 import org.firstinspires.ftc.teamcode.Util.RGB;
 
 import java.util.Random;
@@ -25,7 +26,7 @@ public class Storage{
     ColorSensor colorSensorB;
     ColorSensor colorSensorC;
 
-    static Storage storage;
+    private static Storage INSTANCE;
 
     public static boolean sort;
     public static boolean waitingForDown = false;
@@ -40,7 +41,7 @@ public class Storage{
     final double[] UP_POS   = {1, 1, 0};
     final double[] DOWN_POS = {0, 0, 1};
 
-    public Storage(HardwareMap hardwareMap) {
+    private Storage(HardwareMap hardwareMap) {
         colorSensorA = hardwareMap.colorSensor.get("colorSensorA");
         colorSensorB = hardwareMap.colorSensor.get("colorSensorB");
         colorSensorC = hardwareMap.colorSensor.get("colorSensorC");
@@ -50,7 +51,13 @@ public class Storage{
         servoPushers = new Servo[] {servoPusher2 , servoPusher1, servoPusher3};
     }
 
-
+    public static Storage getInstance(HardwareMap hardwareMap){
+        if(INSTANCE == null)
+        {
+            INSTANCE = new Storage(hardwareMap);
+        }
+        return INSTANCE;
+    }
 
 
 
@@ -82,11 +89,6 @@ public class Storage{
         artifactsStorage[1] = getColor(colorSensorC);
     }
 
-    public static enum Artifacts {
-        GREEN,
-        PURPLE,
-        NONE
-    }
 
     public Artifacts getColor(ColorSensor colorSensor){
         RGB rgb = new RGB(colorSensor.red(), colorSensor.green(), colorSensor.blue());
@@ -179,13 +181,6 @@ public class Storage{
 
     public Artifacts[] getArtifactsStorage(){
         return artifactsStorage;
-    }
-
-    static public Storage getInstance(HardwareMap hardwareMap){
-        if(storage == null){
-            storage = new Storage(hardwareMap);
-        }
-       return storage;
     }
 
     public class OutputArtifactGreen implements Action{

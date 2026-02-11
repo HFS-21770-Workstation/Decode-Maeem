@@ -20,6 +20,8 @@ import org.firstinspires.ftc.teamcode.RobotSystems.IntakeOld;
 import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
+import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 import org.firstinspires.ftc.teamcode.Util.PoseStorage;
 
 
@@ -30,7 +32,7 @@ public class BlueFarAuto extends LinearOpMode {
     Turret turret;
     Shooter shooter;
     Storage storage;
-    Storage.Artifacts[] sort = null;
+    Artifacts[] sort = null;
     VoltageSensor voltageSensor;
     public static double SHOOT_OFFSET = 0.155;
 
@@ -42,13 +44,13 @@ public class BlueFarAuto extends LinearOpMode {
         Pose2d startPose = new Pose2d(61, -15, Math.toRadians(-180));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
-        storage = new Storage(hardwareMap);
-        turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
+        storage = Storage.getInstance(hardwareMap);
+        turret = Turret.getInstance(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
         driveOpModeBlue.turret = turret;
-        shooter = new Shooter(hardwareMap);
+//        shooter = Shooter.getInstance(hardwareMap);
         double currentShooterPower;
-        shooter.initPos();
-        shooter.startCal();
+//        shooter.initPos();
+//        shooter.startCal();
         storage.initServos();
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
@@ -180,9 +182,9 @@ public class BlueFarAuto extends LinearOpMode {
 
         Action shoot_sorted;
         try{
-            if (sort[0] == Storage.Artifacts.GREEN) {
+            if (sort[0] == Artifacts.GREEN) {
                 shoot_sorted = shootGPP;
-            } else if (sort[1] == Storage.Artifacts.GREEN) {
+            } else if (sort[1] == Artifacts.GREEN) {
                 shoot_sorted = shootPGP;
             } else {
                 shoot_sorted = shootPPG;
@@ -201,23 +203,23 @@ public class BlueFarAuto extends LinearOpMode {
 //                )
 //                .build();
 
-        Action shootAction =
-                new ParallelAction(
-                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(20),
-                                voltageSensor.getVoltage(), SHOOT_OFFSET),
-//                        turret.aimTurretAction(drive.localizer.getPose()),
-
-                        shoot_sorted,
-                        storage.updateColorSensorsAction()
-
-                );
-
+        Action shootAction;
+//                new ParallelAction(
+////                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.BLUE),
+//                                voltageSensor.getVoltage(), SHOOT_OFFSET),
+////                        turret.aimTurretAction(drive.localizer.getPose()),
+//
+//                        shoot_sorted,
+//                        storage.updateColorSensorsAction()
+//
+//                );
+        ;
         Thread alighnTurret = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (opModeIsActive()) {
                     Pose2d pose = drive.localizer.getPose();
-                    turret.updatePIDAlignment(20, 0);
+                    turret.updatePIDAlignment(GoalColor.BLUE, 0);
                     turret.update(pose);
                 }
             }
@@ -239,8 +241,8 @@ public class BlueFarAuto extends LinearOpMode {
 ////                        turret.aimTurretAction(drive.localizer.getPose()),
 //                         new SleepAction(3),
                         new SequentialAction(
-                                first_score,
-                                shootAction
+                                first_score
+//                                shootAction
                         )
                 )
         );
@@ -250,7 +252,7 @@ public class BlueFarAuto extends LinearOpMode {
 
         Actions.runBlocking(
                 new SequentialAction(
-                        shootAction,
+//                        shootAction,
                         new SleepAction(2)
                 )
         );

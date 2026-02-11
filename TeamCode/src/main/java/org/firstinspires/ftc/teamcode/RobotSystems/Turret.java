@@ -1,11 +1,7 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
-import androidx.annotation.NonNull;
-
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -15,10 +11,14 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Util.PIDController;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
+
 
 @Config
 public class Turret {
     private DcMotorEx yawMotor;
+
+    private static Turret INSTANCE;
 
     public static double currentPosition;
 
@@ -43,7 +43,6 @@ public class Turret {
     private double currentAngleFromEncoder;
 
     boolean foundAprilTag;
-    TURRET_STATES curState = TURRET_STATES.AIMING;
 
     private Telemetry telemetry;
 
@@ -59,7 +58,7 @@ public class Turret {
     public static double goalY = 72;
 
 
-    public Turret(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
+    private Turret(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
         this.telemetry = telemetry;
         this.dashboard = dashboard;
         this.dashboardTelemetry = this.dashboard.getTelemetry();
@@ -108,23 +107,23 @@ public class Turret {
     }
 
     public void startFunction(){
-        this.pidController = new PIDController();
+        this.pidController = new PIDController( 0.065, 0.00005, 0.001, 1, false);
         pidController.reset();
     }
 
     // GET TARGET ANGLE WITH ID
-    public double getTargetAngleWithWebcam(int id){
-        AprilTagDetection detection = aprilTagWebCamSystem.getDetectionByID(id);
+    public double getTargetAngleWithWebcam(GoalColor goalColor){
+        AprilTagDetection detection = aprilTagWebCamSystem.getDetectionByID(goalColor);
         if(detection == null){
             return getCurrentNormalizedAngle();
         }
         return getCurrentNormalizedAngle() - detection.ftcPose.bearing;
     }
 
-    public double getTargetAngleFromEncoder(int id){
+    public double getTargetAngleFromEncoder(GoalColor goalColor){
 //        double goalX = -62.98087;
 
-        if(id != 24){
+        if(goalColor.getValue() != 24){
             goalY = -72;
         }
 
@@ -148,11 +147,11 @@ public class Turret {
         return AngleUnit.normalizeDegrees(targetAngle);
     }
 
-    public void updatePIDAlignment(int id, double offset) {
-        double target = getTargetAngleFromEncoder(id) + offset;
+    public void updatePIDAlignment(GoalColor goalColor, double offset) {
+        double target = getTargetAngleFromEncoder(goalColor) + offset;
         double current = getCurrentAngleFromEncoder();
 
-        double power = pidController.PIDcontroller(target, current);
+        double power = pidController.updateController(target, current);
 
         // Limit power for safety during testing
         power = Math.max(-0.8, Math.min(0.8, power));
@@ -166,8 +165,8 @@ public class Turret {
     }
 
     // THE CALCULATION IS WRONG
-    public double getCurrentAngleWithWebcam(int id){
-        AprilTagDetection detection = aprilTagWebCamSystem.getDetectionByID(id);
+    public double getCurrentAngleWithWebcam(GoalColor goalColor){
+        AprilTagDetection detection = aprilTagWebCamSystem.getDetectionByID(goalColor);
         if(detection == null){
             return getCurrentAngleFromEncoder();
         }
@@ -199,81 +198,10 @@ public class Turret {
         yawMotor.setPower(power);
     }
 
-//    public void rotateWithPID(){
-//        yawMotor.setPower(pidController.PIDcontroller(getTargetAngleWithWebcam(24), getCurrentAngleFromEncoder()));
-//    }
-//
-//    public void spinControl(int id){
-//        AprilTagDetection detection = aprilTagWebCamSystem.getDetectionByID(id);
-//        if(detection == null){
-//            foundAprilTag = false;
-//        }
-//        else{
-//            foundAprilTag = true;
-//        }
-//        if(getCurrentAngleFromEncoder() > 180){
-//            curState = TURRET_STATES.START_CORRECTING;
-//            yawMotor.setPower(DIRECTION.LEFT.getValue());
-//        }
-//        else if(getCurrentAngleFromEncoder() < -180){
-//            curState = TURRET_STATES.START_CORRECTING;
-//            yawMotor.setPower(DIRECTION.RIGHT.getValue());
-//        }
-//
-//        if(curState == TURRET_STATES.START_CORRECTING && !foundAprilTag){
-//            curState = TURRET_STATES.MIDDLE_CORRECTING;
-//        }
-//        if(curState == TURRET_STATES.MIDDLE_CORRECTING && foundAprilTag){
-//            curState = TURRET_STATES.AIMING;
-//        }
-//
-//        if(curState == TURRET_STATES.AIMING){
-//            yawMotor.setPower(pidController.PIDcontroller(getTargetAngleWithWebcam(24), getCurrentAngleFromEncoder()));
-//        }
-//        else{
-//            yawMotor.setPower(yawMotor.getPower());
-//        }
-//    }
-    public enum DIRECTION{
-        LEFT(0.4),
-        RIGHT(-0.4);
-        private double value;
-
-        DIRECTION(double value) {
-            this.value = value;
+    public static Turret getInstance(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
+        if(INSTANCE == null){
+            INSTANCE = new Turret(hardwareMap, telemetry, dashboard, startPose);
         }
-
-        public double getValue(){
-            return this.value;
-        }
-    }
-    public enum TURRET_STATES{
-        AIMING,
-        START_CORRECTING,
-        MIDDLE_CORRECTING;
-    }
-
-
-    public class AimTurretAction implements Action{
-        Pose2d pose;
-        @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            updatePIDAlignment(24,0);
-            update(pose);
-
-            if(pidController.error > -0.5 && pidController.error < 0.5){
-                return false;
-            }
-            return true;
-        }
-
-        public void updatePose(Pose2d newPose){
-            pose = newPose;
-        }
-    }
-    public Action aimTurretAction(Pose2d curPose){
-        AimTurretAction retAction = new AimTurretAction();
-        retAction.pose = curPose;
-        return retAction;
+        return INSTANCE;
     }
 }

@@ -3,34 +3,43 @@ package org.firstinspires.ftc.teamcode.OpModes;
 
 import static android.os.SystemClock.sleep;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.RobotBetSystems.Intake;
+import org.firstinspires.ftc.teamcode.RobotSystems.Drive;
 
-@TeleOp
+@TeleOp(name = "Drive Test")
 public class test extends OpMode {
 //    Intake intake;
 //    boolean opModeIsActive;
 
-
     DcMotor shooterMotorUp;
     DcMotor shooterMotorDown;
 
-    final double power = 0.1;
-
-
+    Drive drive;
     @Override
     public void init() {
+        drive = new Drive(hardwareMap, new Pose2d(0,0,0), FtcDashboard.getInstance());
 
-        shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
-        shooterMotorDown = hardwareMap.dcMotor.get("shooterDown");
+        shooterMotorUp = hardwareMap.get(DcMotor.class,"shooterUp");
+        shooterMotorDown = hardwareMap.get(DcMotor.class, "shooterDown");
 
-        shooterMotorUp.setDirection(DcMotorSimple.Direction.REVERSE);
-        shooterMotorDown.setDirection(DcMotorSimple.Direction.FORWARD);
+//        shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
+//        shooterMotorDown = hardwareMap.dcMotor.get("shooterDown");
+//
+//        shooterMotorUp.setDirection(DcMotorSimple.Direction.REVERSE);
+//        shooterMotorDown.setDirection(DcMotorSimple.Direction.FORWARD);
 //        intake = new Intake(hardwareMap);
     }
 //    @Override
@@ -52,16 +61,9 @@ public class test extends OpMode {
 
     @Override
     public void loop() {
-        if(gamepad2.yWasPressed()){
-            shooterMotorUp.setPower(shooterMotorUp.getPower() + power);
-            shooterMotorDown.setPower(shooterMotorDown.getPower() + power);
-        }
-        if(gamepad2.aWasPressed()) {
-            shooterMotorUp.setPower(shooterMotorUp.getPower() - power);
-            shooterMotorDown.setPower(shooterMotorDown.getPower() - power);
-        }
-
-
+        drive.wheelControl(0, 0, 0);
+        shooterMotorDown.setPower(1);
+        shooterMotorUp.setPower(0);
 //        telemetry.addData("balls capacity:",  intake.UpdateBallCount());
 //        double SensorADis = intake.SensorA.getDistance(DistanceUnit.INCH);
 //        double SensorBDis = intake.SensorB.getDistance(DistanceUnit.INCH);

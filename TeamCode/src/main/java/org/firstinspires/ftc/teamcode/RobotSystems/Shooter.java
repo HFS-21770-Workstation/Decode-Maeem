@@ -1,42 +1,69 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
 
-import android.sax.StartElementListener;
-
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ftc.Encoder;
+import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
+import com.acmerobotics.roadrunner.ftc.RawEncoder;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Util.calculateShootPower;
+import org.firstinspires.ftc.teamcode.Util.Enums.Angle;
 
 public class Shooter {
-    DcMotor shooterMotorUp;
-    DcMotor shooterMotorDown;
-    static Shooter shooter;
-    Servo servoRight;
-    Servo servoLeft;
+
+
+    DcMotorEx shooterMotorUp;
+    DcMotorEx shooterMotorDown;
+
+
+    private final double TICKS_PER_REVOLUTION = 28 ;
+    private static Shooter INSTANCE;
+    Servo hoodRight;
+    Servo hoodLeft;
     calculateShootPower powerClose;
     calculateShootPower powerMid;
     calculateShootPower powerFar;
 
-    public Shooter(HardwareMap hardwareMap){
-        shooterMotorUp = hardwareMap.dcMotor.get("shooterUp");
-        shooterMotorDown = hardwareMap.dcMotor.get("shooterDown");
+    public double upCurrent = 0;
+    public double downCurrent = 0;
 
-        shooterMotorUp.setDirection(DcMotorSimple.Direction.FORWARD);
-        shooterMotorDown.setDirection(DcMotorSimple.Direction.REVERSE);
-        servoRight = hardwareMap.servo.get("servoRight");
-        servoLeft = hardwareMap.servo.get("servoLeft");
-        servoRight.setDirection(Servo.Direction.FORWARD);
-        servoLeft.setDirection(Servo.Direction.REVERSE);
+    private Shooter(HardwareMap hardwareMap){
+        shooterMotorUp = hardwareMap.get(DcMotorEx.class,"shooterUp");
+        shooterMotorDown = hardwareMap.get(DcMotorEx.class, "shooterDown");
+
+
+        shooterMotorUp.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooterMotorDown.setDirection(DcMotorSimple.Direction.FORWARD);
+        shooterMotorDown.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        shooterMotorDown.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        hoodRight = hardwareMap.servo.get("hoodRight");
+        hoodLeft = hardwareMap.servo.get("hoodLeft");
+        hoodRight.setDirection(Servo.Direction.FORWARD);
+        hoodLeft.setDirection(Servo.Direction.FORWARD);
 
     }
 
+    public static Shooter getInstance(HardwareMap hardwareMap){
+        if(INSTANCE == null){
+            INSTANCE = new Shooter(hardwareMap);
+        }
+
+        return INSTANCE;
+    }
+    public static void stop(){
+        INSTANCE = null;
+    }
     public void startCal(){
          powerFar = new calculateShootPower.Builder()
                 //.addSample(119.5393881984405, 12.06,0.6498001037629322)
@@ -68,14 +95,16 @@ public class Shooter {
 //                .addSample(128.01, 14.067, 0.7)
 //                .build();
 
-
     }
     public void initPos(){
-        servoRight.setPosition(0);
-        servoLeft.setPosition(0);
+        hoodRight.setPosition(0);
+        hoodLeft.setPosition(0);
     }
 
-    public void StartShoot(double power) {
+    public void startShoot(double power) {
+        upCurrent = shooterMotorUp.getCurrent(CurrentUnit.AMPS);
+        downCurrent = shooterMotorDown.getCurrent(CurrentUnit.AMPS);
+
         shooterMotorUp.setPower(power);
         shooterMotorDown.setPower(power);
     }
@@ -87,50 +116,30 @@ public class Shooter {
         }
         return 0;
     }
-    public void StopShoot()
+    public void stopShoot()
     {
         shooterMotorUp.setPower(0);
         shooterMotorDown.setPower(0);
     }
 
-    public void ChangeAngle(double Rpos, double Lpos){
-        servoLeft.setPosition(Lpos);
-        servoRight.setPosition(Rpos);
+    public void changeAngle(double Rpos, double Lpos){
+        hoodLeft.setPosition(Lpos);
+        hoodRight.setPosition(Rpos);
     }
-    public double GetPosR(){
-        return servoRight.getPosition();
-
-
+    public double getPosR(){
+        return hoodRight.getPosition();
     }
-    public double GetPosL(){
-        return servoLeft.getPosition();
-
+    public double getPosL(){
+        return hoodLeft.getPosition();
     }
-    public double GetPower(){
+    public double getPower(){
         return shooterMotorUp.getPower();
     }
-    public static enum Angle{
-        LOW_DIS(0),
-        MID_DIS(0.225),
-        HIGH_DIS(0.5);
-        private double value;
 
-
-        Angle(double value) {
-            this.value = value;
-        }
-
-        public double getValue(){
-            return this.value;
-        }
-
-        public Angle next() {
-            Angle[] values = Angle.values();
-            return values[(this.ordinal() + 1) % values.length];
-        }
+    public double getVelocity(){
+        double velocity = shooterMotorDown.getVelocity();
+        return ((velocity * 60) / TICKS_PER_REVOLUTION);
     }
-
-
 
     public double getServoPositionWithDistance(double dis) {
         if (dis < 48 && dis > 0) {
@@ -142,7 +151,7 @@ public class Shooter {
         if (dis > 96 && dis < 144) {
             return Angle.HIGH_DIS.getValue();
         }
-        return servoRight.getPosition();
+        return hoodRight.getPosition();
     }
 
     public class ShootWithAutoPower implements Action{
@@ -151,9 +160,9 @@ public class Shooter {
         public double offSet;
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            ChangeAngle(getServoPositionWithDistance(distance),
+            changeAngle(getServoPositionWithDistance(distance),
                 getServoPositionWithDistance(distance));
-            StartShoot(shootWithAutoPower(distance, volt, offSet));
+            startShoot(shootWithAutoPower(distance, volt, offSet));
             return false;
         }
 
@@ -171,7 +180,7 @@ public class Shooter {
 
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            StopShoot();
+            stopShoot();
             return false;
         }
     }

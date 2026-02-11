@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
 import org.firstinspires.ftc.teamcode.Util.PoseStorage;
+import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 
 
 @Config
@@ -33,13 +34,13 @@ public class BlueCloseAuto extends LinearOpMode {
         Pose2d startPose = new Pose2d(-55.684, -38.344, Math.toRadians(0));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
-        turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
+        turret = Turret.getInstance(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
         driveOpModeBlue.turret = turret;
-        shooter = new Shooter(hardwareMap);
-        storage = new Storage(hardwareMap);
+//        shooter = Shooter.getInstance(hardwareMap);
+        storage = Storage.getInstance(hardwareMap);
         double currentShooterPower;
-        shooter.initPos();
-        shooter.startCal();
+//        shooter.initPos();
+//        shooter.startCal();
         storage.initServos();
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
@@ -52,7 +53,7 @@ public class BlueCloseAuto extends LinearOpMode {
             public void run() {
                 while (opModeIsActive()) {
                     Pose2d pose = drive.localizer.getPose();
-                    turret.updatePIDAlignment(20, 0);
+                    turret.updatePIDAlignment(GoalColor.BLUE, 0);
                     turret.update(pose);
                 }
             }
