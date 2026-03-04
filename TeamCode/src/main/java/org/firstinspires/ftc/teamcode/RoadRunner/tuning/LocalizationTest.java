@@ -12,8 +12,11 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.RoadRunner.Drawing;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.RoadRunner.TankDrive;
+import org.firstinspires.ftc.teamcode.RobotSystems.CameraLocalizer;
+import org.firstinspires.ftc.teamcode.Util.Enums;
 
-@Disabled
+import java.util.Calendar;
+
 public class LocalizationTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -21,7 +24,9 @@ public class LocalizationTest extends LinearOpMode {
 
         if (TuningOpModes.DRIVE_CLASS.equals(MecanumDrive.class)) {
             MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
-
+//            CameraLocalizer cameraLocalizer =
+//                    new CameraLocalizer(hardwareMap, new Pose2d(0,0,0),
+//                    telemetry, FtcDashboard.getInstance(), Enums.GoalColor.RED);
             waitForStart();
 
             while (opModeIsActive()) {

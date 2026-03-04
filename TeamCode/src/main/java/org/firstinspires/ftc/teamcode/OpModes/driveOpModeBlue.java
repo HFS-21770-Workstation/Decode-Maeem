@@ -35,8 +35,10 @@ public class driveOpModeBlue extends OpMode {
     Pose2d startPose = PoseStorage.pose;
     boolean startShot;
     double turretOffset = 0;
-    double shooterOffset = 0.05;
+    double shooterOffset = 50;
     public boolean turretOffsetMore = false;
+
+    double measuredVelocity = 0;
 
 
     MecanumDrive mecanumDrive;
@@ -50,35 +52,39 @@ public class driveOpModeBlue extends OpMode {
 
     double intakePower = 0;
 
+    public static double kp = 0.03;
+    public static double ki = 0;
+    public static double kd = 0;
 
+    boolean turretAuto = true;
 
     @Override
     public void init() {
         if(startPose == null){
-            startPose = new Pose2d(40, -16, Math.toRadians(-90));
-            turret = Turret.getInstance(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
+            startPose = new Pose2d(40, -16, Math.toRadians(90));
         }
-
+        turretOffset = -PoseStorage.currentPose;
+        turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
         mecanumDrive = new MecanumDrive(hardwareMap, startPose);
-        storage = Storage.getInstance(hardwareMap);
+        storage = new Storage(hardwareMap);
 
-//        shooter = Shooter.getInstance(hardwareMap);
-//        shooter.changeAngle(0,0);
+
+        shooter = new Shooter(hardwareMap);
+        shooter.changeAngle(0,0);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-
-
-        intake = IntakeOld.getInstance(hardwareMap);
+        intake = new IntakeOld(hardwareMap);
 
         storage.initServos();
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
     }
 
     @Override
     public void start(){
         turret.startFunction();
-//        shooter.startCal();
+        shooter.startCal();
     }
 
     @Override
@@ -86,13 +92,19 @@ public class driveOpModeBlue extends OpMode {
         mecanumDrive.updatePoseEstimate();
         Pose2d currentPose = mecanumDrive.localizer.getPose();
 
-        turret.aprilTagWebCamSystem.update(currentPose);
         turret.update(currentPose);
-        turret.updatePIDAlignment(GoalColor.BLUE, turretOffset);
+        turret.aprilTagWebCamSystem.update(currentPose);
+        if(turretAuto){
+            turret.updatePIDAlignment(GoalColor.BLUE, turretOffset);
+        }
+        else{
+            turret.setPower(0);
+        }
+        turret.pidController.updateValues(kp, ki, kd, 1);
 
         double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.BLUE);
-//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
-//                shooter.getServoPositionWithDistance(distance));
+        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
+                shooter.getServoPositionWithDistance(distance));
 
 
         double x = -gamepad1.left_stick_y;
@@ -141,31 +153,19 @@ public class driveOpModeBlue extends OpMode {
         }
 
         if (startShot) {
-            if(distance > 100){
-//                currentShooterPower = shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), -shooterOffset);
-            }
-            else{
-                if(gamepad1.dpadLeftWasPressed()){
-                    if(currentShooterPower <= 0.95){
-                        currentShooterPower += 0.05;
-                    }
-                }
-                if(gamepad1.dpadRightWasPressed()){
-                    if(currentShooterPower >= 0.05){
-                        currentShooterPower -= 0.05;
-                    }
-                }
-            }
-            if(currentShooterPower > 1){
-                currentShooterPower = 1;
-            }
-            else if(currentShooterPower < -1){
-                currentShooterPower = -1;
-            }
-//            shooter.startShoot(currentShooterPower);
+            // רק המנועים נכנסים לעבודה לפי הפולינום
+            measuredVelocity = shooter.shootWithAutoPower(distance, shooterOffset);
+            shooter.setVelocity(measuredVelocity);
+
+//            if (gamepad1.dpadUpWasPressed()) measuredVelocity += velocityIncrement;
+//            if (gamepad1.dpadDownWasPressed()) measuredVelocity -= velocityIncrement;
+            // אופציונלי: ירייה אוטומטית של הכדור ברגע שהמהירות מוכנה
+
+
         }
-        else{
-            shooter.stopShoot();
+        if (startShot == false){
+            // כיבוי מנועי היורה
+            shooter.setVelocity(0);
         }
 
 
@@ -177,19 +177,17 @@ public class driveOpModeBlue extends OpMode {
 
 
 
-        if(gamepad1.x && startShot){
+        if(gamepad1.xWasPressed() && startShot){
             if(shooter.getPower() == 1){
 //                shooter.startShoot(1);
             }
             storage.setOutPutArtifacts(Artifacts.GREEN);
         }
-        else if (gamepad1.b && startShot) {
-            if(shooter.getPower() == 1){
-//                shooter.startShoot(1);
-            }
+        else if (gamepad1.bWasPressed() && startShot) {
+
             storage.setOutPutArtifacts(Artifacts.PURPLE);
         }
-        else if(gamepad1.y && startShot){
+        else if(gamepad1.yWasPressed() && startShot){
             if(shooter.getPower() == 1){
 //                shooter.startShoot(1);
             }
@@ -217,13 +215,13 @@ public class driveOpModeBlue extends OpMode {
 //        if (gamepad2.dpadDownWasPressed()) {
 //            shooter.changeAngle(shooter.getPosR() - pos, shooter.getPosL() - pos);
 //        }
-        if(gamepad2.a) {
+        if(gamepad2.aWasPressed()) {
             storage.pusherUp(0);
         }
-        if(gamepad2.x) {
+        if(gamepad2.xWasPressed()) {
             storage.pusherUp(2);
         }
-        if(gamepad2.b) {
+        if(gamepad2.bWasPressed()) {
             storage.pusherUp(1);
         }
 
@@ -248,15 +246,22 @@ public class driveOpModeBlue extends OpMode {
             }
         }
 
-
-
-        if(gamepad2.right_trigger > 0.5){
-            shooterOffset += 0.05;
+        if (gamepad2.dpadUpWasPressed()) {
+            shooterOffset += 25;
         }
-        else if(gamepad2.left_trigger > 0.5){
-            shooterOffset -= 0.05;
+        if (gamepad2.dpadDownWasPressed()) {
+            shooterOffset -= 25;
+        }
+        if(gamepad2.right_trigger == 1){
+            shooterOffset = 0;
         }
 
+        if(gamepad2.startWasPressed()){
+            turretAuto = !turretAuto;
+        }
+        if(gamepad2.optionsWasPressed()){
+            mecanumDrive.localizer.setPose(new Pose2d(63, 63, Math.toRadians(180)));
+        }
     }
 
     @Override

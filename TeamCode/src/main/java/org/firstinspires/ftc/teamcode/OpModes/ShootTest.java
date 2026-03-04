@@ -1,162 +1,134 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
+import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
 import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
+
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.teamcode.RoadRunner.Drawing;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.RobotSystems.AprilTagWebCamSystem;
-import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 import org.firstinspires.ftc.teamcode.RobotSystems.Turret;
+import org.firstinspires.ftc.teamcode.RobotSystems.Shooter;
 
+import java.util.Arrays;
 
-@TeleOp
 @Config
-@Disabled
+@TeleOp
 public class ShootTest extends OpMode {
+
     Shooter shooter;
     Turret turret;
-    AprilTagWebCamSystem aprilTagWebCamSystem;
-    final double pos = 0.1;
-    final double power = 0.1;
-    VoltageSensor voltageSensor;
+//    AprilTagWebCamSystem aprilTagWebCamSystem;
     Servo servoPusher1;
-    boolean startShot = false;
+    VoltageSensor voltageSensor;
     FtcDashboard dashboard = FtcDashboard.getInstance();
-
-    double turretOffset = 0;
-
     MecanumDrive mecanumDrive;
-    Pose2d startPose = new Pose2d(0, 0, Math.toRadians(180));
+    Storage storage;
+    Pose2d startPose = new Pose2d(0, 0, Math.toRadians(0));
+    boolean startShot = false;
+    double turretOffset = 0;
+    boolean isAutoShooting= false;
+    double measuredVelocity = 0;
+    double velocityIncrement = 125;
+
+    public static double kp = 0.03;
+    public static double ki = 0;
+    public static double kd = 0;
 
     @Override
     public void init() {
         mecanumDrive = new MecanumDrive(hardwareMap, startPose);
-        aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
-//        shooter =  Shooter.getInstance(hardwareMap);
-//        shooter.changeAngle(0,0);
-        turret = Turret.getInstance(hardwareMap, telemetry, dashboard, startPose);
+//        aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, dashboard, startPose);
+        turret = new Turret(hardwareMap, telemetry, dashboard, startPose);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        telemetry = FtcDashboard.getInstance().getTelemetry();
-
+        storage = new Storage(hardwareMap);
         servoPusher1 = hardwareMap.servo.get("servoPusher3");
         servoPusher1.setPosition(1);
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        shooter = new Shooter(hardwareMap);
+
+        shooter.initPos();
+        storage.initServos();
     }
 
     @Override
-    public void init_loop(){
-//         storage.somthing =  apriltagWebcamSystem.getObelisk();
-    }
-
-    @Override
-    public void start(){
+    public void start() {
         turret.startFunction();
-//        shooter.startCal();
+        shooter.startCal();
     }
 
     @Override
     public void loop() {
         mecanumDrive.updatePoseEstimate();
         Pose2d currentPose = mecanumDrive.localizer.getPose();
+        double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
 
-        double x = -gamepad1.left_stick_y;
-        double y = -gamepad1.left_stick_x;
-        double rx = -gamepad1.right_stick_x;
-
+        // --- עדכון מערכות בסיסי ---
         mecanumDrive.setDrivePowers(new PoseVelocity2d(
-                new Vector2d(x, y),
-                rx
+                new Vector2d(-gamepad1.left_stick_y, -gamepad1.left_stick_x),
+                -gamepad1.right_stick_x
         ));
-
-
-        aprilTagWebCamSystem.update(mecanumDrive.localizer.getPose());
         turret.update(currentPose);
-        aprilTagWebCamSystem.update(currentPose);
-
+        turret.aprilTagWebCamSystem.update(currentPose);
         turret.updatePIDAlignment(GoalColor.RED, turretOffset);
+        turret.pidController.updateValues(kp, ki, kp, 1);
+        storage.checkTime();
 
-        if(gamepad2.dpadRightWasPressed()){
-            turretOffset += 1;
+        if (!storage.waitingForDown) {
+            storage.updateColorSensors();
         }
-        if(gamepad2.dpadLeftWasPressed()){
-            turretOffset -= 1;
-        }
 
+        // --- עדכון זווית תמידי ---
+        // הסרוואים תמיד יתכווננו לפי המרחק מהמטרה, גם אם המנועים כבויים
+        double servoPos = shooter.getServoPositionWithDistance(distance);
+        shooter.changeAngle(servoPos, servoPos);
 
-        double distance = aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
+        // --- לוגיקת הפעלת המנועים (B) ---
         if (gamepad1.bWasPressed()) {
-            startShot = !startShot;
-            if (startShot) {
-//                shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
-            } else {
-//                shooter.startShoot(0);
-            }
+            isAutoShooting = !isAutoShooting;
         }
 
-//        double distance = -1;
-//        if(distance == -1){
-//            shooter.ChangeAngle(shooter.GetPosR(),shooter.GetPosL());
-//        }
-//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
-//                shooter.getServoPositionWithDistance(distance));
-//        if (startShot) {
-//            if (gamepad1.yWasPressed()) {
-//                shooter.StartShoot(shooter.GetPower() + 0.025);
-//            }
-//            if (gamepad1.aWasPressed()) {
-//                shooter.StartShoot(shooter.GetPower() - 0.025);
-//            }
-//        }
-        if(gamepad1.dpad_up){
+        if (isAutoShooting) {
+            // רק המנועים נכנסים לעבודה לפי הפולינום
+            measuredVelocity = shooter.shootWithAutoPower(distance, 0);
+            shooter.setVelocity(measuredVelocity);
+
+//            if (gamepad1.dpadUpWasPressed()) measuredVelocity += velocityIncrement;
+//            if (gamepad1.dpadDownWasPressed()) measuredVelocity -= velocityIncrement;
+            // אופציונלי: ירייה אוטומטית של הכדור ברגע שהמהירות מוכנה
+
 
         }
-        if(gamepad1.x){
-            servoPusher1.setPosition(0);
+        if (isAutoShooting == false){
+            // כיבוי מנועי היורה
+            shooter.setVelocity(0);
         }
-        else{
-            servoPusher1.setPosition(1);
-        }
-        telemetry.addData("Power:", shooter.getPower());
-//        telemetry.addData("PosL:", shooter.GetPosL());
-//        telemetry.addData("PosR:", shooter.GetPosR());
-        telemetry.addData("Volt:", voltageSensor.getVoltage());
-//        String distanceStr = "Distance: " + String.format("%.3f", distance);
-//        telemetry.addLine(distanceStr);
-        telemetry.addData("d",aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED));
 
-        telemetry.addData("start shoot", startShot);
-
-        // 5. THE DRAWING LOGIC
+        // כיוונון עדין וטלמטריה
+        if(gamepad1.dpadRightWasPressed()) turretOffset += 1;
+        if(gamepad1.dpadLeftWasPressed()) turretOffset -= 1;
+        if (gamepad1.aWasPressed()) storage.setOutPutArtifactsRandom();
         TelemetryPacket packet = new TelemetryPacket();
-        Canvas field = packet.fieldOverlay();
-
-        // Draw the robot using the pose we just got from the localizer
-        field.setStroke("#3F51B5");
-        Drawing.drawRobot(field, currentPose);
-
-        // 6. Send everything to Dashboard
+        packet.put("Distance", distance);
+        packet.put("Auto Mode", isAutoShooting);
+        packet.put("vel", shooter.getVelocity());
+        packet.put("Tvel", measuredVelocity);
+        packet.put("Polynomial Coefficients", Arrays.toString(shooter.getPolynomial()));
         dashboard.sendTelemetryPacket(packet);
-
-        // Optional: Keep your phone telemetry alive
-        telemetry.addData("X", currentPose.position.x);
-        telemetry.addData("Y", currentPose.position.y);
-        telemetry.update();
     }
+
     @Override
-    public void stop(){
-        aprilTagWebCamSystem.stop();
+    public void stop() {
+        shooter.stop();
+        storage.stop();
+
     }
 }

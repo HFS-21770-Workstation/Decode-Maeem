@@ -41,7 +41,7 @@ public class Storage{
     final double[] UP_POS   = {1, 1, 0};
     final double[] DOWN_POS = {0, 0, 1};
 
-    private Storage(HardwareMap hardwareMap) {
+    public Storage(HardwareMap hardwareMap) {
         colorSensorA = hardwareMap.colorSensor.get("colorSensorA");
         colorSensorB = hardwareMap.colorSensor.get("colorSensorB");
         colorSensorC = hardwareMap.colorSensor.get("colorSensorC");
@@ -57,6 +57,9 @@ public class Storage{
             INSTANCE = new Storage(hardwareMap);
         }
         return INSTANCE;
+    }
+    public void stop(){
+        INSTANCE = null;
     }
 
 

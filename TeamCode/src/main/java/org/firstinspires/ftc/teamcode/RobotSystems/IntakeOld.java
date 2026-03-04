@@ -13,7 +13,7 @@ public class IntakeOld{
     DcMotor intakeMotor;
     double power = 0;
 
-    private IntakeOld(HardwareMap hardwareMap){
+    public IntakeOld(HardwareMap hardwareMap){
         intakeMotor = hardwareMap.dcMotor.get("intakeMotor");
     }
     public void startIntake(double newPower){

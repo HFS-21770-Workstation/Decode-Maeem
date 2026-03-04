@@ -16,15 +16,16 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.Util.PIDFController;
 import org.firstinspires.ftc.teamcode.Util.calculateShootPower;
 import org.firstinspires.ftc.teamcode.Util.Enums.Angle;
 
 public class Shooter {
 
 
-    DcMotorEx shooterMotorUp;
+    DcMotor shooterMotorUp;
     DcMotorEx shooterMotorDown;
-
+    PIDFController pidfController;
 
     private final double TICKS_PER_REVOLUTION = 28 ;
     private static Shooter INSTANCE;
@@ -37,8 +38,16 @@ public class Shooter {
     public double upCurrent = 0;
     public double downCurrent = 0;
 
-    private Shooter(HardwareMap hardwareMap){
-        shooterMotorUp = hardwareMap.get(DcMotorEx.class,"shooterUp");
+    public static double kp = 0.0005;
+    public static double ki = 0;
+    public static double kd = 0;
+    public static double kf = 0.000215;
+
+    public double targetVelocity = 0;
+
+
+    public Shooter(HardwareMap hardwareMap){
+        shooterMotorUp = hardwareMap.get(DcMotor.class,"shooterUp");
         shooterMotorDown = hardwareMap.get(DcMotorEx.class, "shooterDown");
 
 
@@ -46,14 +55,15 @@ public class Shooter {
         shooterMotorDown.setDirection(DcMotorSimple.Direction.FORWARD);
         shooterMotorDown.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooterMotorDown.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotorDown.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        shooterMotorUp.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         hoodRight = hardwareMap.servo.get("hoodRight");
         hoodLeft = hardwareMap.servo.get("hoodLeft");
         hoodRight.setDirection(Servo.Direction.FORWARD);
-        hoodLeft.setDirection(Servo.Direction.FORWARD);
-
+        hoodLeft.setDirection(Servo.Direction.REVERSE);
+        pidfController = new PIDFController(kp, ki, kd,kf, 1,0,true);
     }
-
     public static Shooter getInstance(HardwareMap hardwareMap){
         if(INSTANCE == null){
             INSTANCE = new Shooter(hardwareMap);
@@ -61,40 +71,30 @@ public class Shooter {
 
         return INSTANCE;
     }
-    public static void stop(){
+    public void stop(){
         INSTANCE = null;
     }
     public void startCal(){
          powerFar = new calculateShootPower.Builder()
-                //.addSample(119.5393881984405, 12.06,0.6498001037629322)
-                 .addSample(119.28944643574597,13.708,0.5599230933561204)
+                 .addSample(119.83853896827189 ,2850.0)
+                 .addSample(130.00031531871596 ,2875.0)
+                 .addSample(143.2954288267012 ,3125.0)
+//                 .addSample(138.61051699226041 ,2875.0)
+                 .addSample(152.44115343470273 ,3125.0)
+//                 .addSample(129.18332644943038 ,2875.0)
 
-                .addSample(132.38881707664072, 11.59, 0.6798913541062654)
-                //.addSample(121.48789897090964, 13.13, 0.5598620563371685)
-                 .addSample(122.6043298945934,12.69,0.5999328592791529)
-                .addSample(113.03211179499166, 12.9, 0.5599536118655964)
-                .addSample(117.97265841466928, 12.45, 0.6399121066927091)
-                .addSample(114.29950235012214, 12.35, 0.5999328592791529)
+                .build();
+        powerClose = new calculateShootPower.Builder()
+                .addSample(28.19, 2125.0)
+                .addSample(48.10, 2250.0)
+                .addSample(65.52, 2250.0)
+                .addSample(73.13, 2375.0)
                 .build();
 
-//         powerMid = new calculateShootPower.Builder()
-//                .addSample(71.8, 12.7, 0.49)
-//                .addSample(82.34, 12.24, 0.54)
-//                .addSample(83.61, 12.41, 0.54)
-//                .addSample(85.0, 12.69, 0.549)
-//                .addSample(89.1, 12.42, 0.54)
-//                .addSample(90.0, 12.7, 0.549)
-//                .build();
-//
-//         powerFar = new calculateShootPower.Builder()
-//                .addSample(112.5, 12.5, 0.849)
-//                .addSample(119.0, 12.5, 0.79)
-//                .addSample(122.0, 13.5, 0.79)
-//                .addSample(127.7, 12.6, 0.89)
-//                .addSample(127.8, 13.0, 0.74)
-//                .addSample(128.01, 14.067, 0.7)
-//                .build();
+    }
 
+    public double[] getPolynomial(){
+        return powerFar.getPolynomial();
     }
     public void initPos(){
         hoodRight.setPosition(0);
@@ -102,19 +102,24 @@ public class Shooter {
     }
 
     public void startShoot(double power) {
-        upCurrent = shooterMotorUp.getCurrent(CurrentUnit.AMPS);
-        downCurrent = shooterMotorDown.getCurrent(CurrentUnit.AMPS);
-
         shooterMotorUp.setPower(power);
         shooterMotorDown.setPower(power);
     }
-    public double shootWithAutoPower(double d, double v, double offSet) {
+
+    public void setVelocity(double Velocity){
+        if(Velocity == 0){
+
+        }
+        startShoot(pidfController.updateController(Velocity, getVelocity()));
+    }
+
+    public double shootWithAutoPower(double d, double offSet) {
         double power;
 
-        if (d > 96 && d < 144) {
-            return power = (powerFar.calculate(d, v)) + offSet;
-        }
-        return 0;
+        if (d > 110) return power = (powerFar.calculateVelocity(d)) + offSet;
+        return power = (powerClose.calculateVelocity(d)) + offSet;
+
+
     }
     public void stopShoot()
     {
@@ -142,11 +147,8 @@ public class Shooter {
     }
 
     public double getServoPositionWithDistance(double dis) {
-        if (dis < 48 && dis > 0) {
+        if (dis < 96 && dis > 0) {
             return Angle.LOW_DIS.getValue();
-        }
-        if (dis >= 48 && dis < 96) {
-            return Angle.MID_DIS.getValue();
         }
         if (dis > 96 && dis < 144) {
             return Angle.HIGH_DIS.getValue();
@@ -154,24 +156,47 @@ public class Shooter {
         return hoodRight.getPosition();
     }
 
-    public class ShootWithAutoPower implements Action{
+
+//    public class ShootWithAutoPower implements Action{
+//        public double distance;
+//        public double volt;
+//        public double offSet;
+//        @Override
+//        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+//            changeAngle(getServoPositionWithDistance(distance),
+//                getServoPositionWithDistance(distance));
+//            startShoot(shootWithAutoPower(distance,offSet));
+//            return false;
+//        }
+//
+//    }
+//
+//    public Action shootWithAutoPowerAction(double distance,double offSet){
+//        ShootWithAutoPower returnAction = new ShootWithAutoPower();
+//        returnAction.distance = distance;
+//        returnAction.offSet = offSet;
+//        return returnAction;
+//    }
+
+    public class ShootWithAutoPower implements Action {
         public double distance;
-        public double volt;
         public double offSet;
+
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-            changeAngle(getServoPositionWithDistance(distance),
-                getServoPositionWithDistance(distance));
-            startShoot(shootWithAutoPower(distance, volt, offSet));
-            return false;
-        }
+            double servoPos = getServoPositionWithDistance(distance);
+            changeAngle(servoPos, servoPos);
 
+            double targetVel = shootWithAutoPower(distance, offSet);
+            setVelocity(targetVel);
+
+            return true;
+        }
     }
 
-    public Action shootWithAutoPowerAction(double distance, double volt, double offSet){
+    public Action shootWithAutoPowerAction(double distance, double offSet){
         ShootWithAutoPower returnAction = new ShootWithAutoPower();
         returnAction.distance = distance;
-        returnAction.volt = volt;
         returnAction.offSet = offSet;
         return returnAction;
     }

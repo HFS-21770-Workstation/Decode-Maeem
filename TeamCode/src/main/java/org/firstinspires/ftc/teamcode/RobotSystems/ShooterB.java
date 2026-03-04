@@ -61,17 +61,17 @@ public class ShooterB {
 
 
     public void startCal(){
-         powerFar = new calculateShootPower.Builder()
-                //.addSample(119.5393881984405, 12.06,0.6498001037629322)
-                 .addSample(119.28944643574597,13.708,0.5599230933561204)
-
-                .addSample(132.38881707664072, 11.59, 0.6798913541062654)
-                //.addSample(121.48789897090964, 13.13, 0.5598620563371685)
-                 .addSample(122.6043298945934,12.69,0.5999328592791529)
-                .addSample(113.03211179499166, 12.9, 0.5599536118655964)
-                .addSample(117.97265841466928, 12.45, 0.6399121066927091)
-                .addSample(114.29950235012214, 12.35, 0.5999328592791529)
-                .build();
+//         powerFar = new calculateShootPower.Builder()
+//                //.addSample(119.5393881984405, 12.06,0.6498001037629322)
+//                 .addSample(119.28944643574597,13.708,0.5599230933561204)
+//
+//                .addSample(132.38881707664072, 11.59, 0.6798913541062654)
+//                //.addSample(121.48789897090964, 13.13, 0.5598620563371685)
+//                 .addSample(122.6043298945934,12.69,0.5999328592791529)
+//                .addSample(113.03211179499166, 12.9, 0.5599536118655964)
+//                .addSample(117.97265841466928, 12.45, 0.6399121066927091)
+//                .addSample(114.29950235012214, 12.35, 0.5999328592791529)
+//                .build();
 
 //         powerMid = new calculateShootPower.Builder()
 //                .addSample(71.8, 12.7, 0.49)
@@ -98,6 +98,7 @@ public class ShooterB {
         servoLeft.setPosition(0);
     }
 
+
     public void StartShoot(double power) {
         shooterMotorUp.setPower(power);
         shooterMotorDown.setPower(power);
@@ -106,7 +107,7 @@ public class ShooterB {
         double power;
 
         if (d > 96 && d < 144) {
-            return power = (powerFar.calculate(d, v)) + offSet;
+//            return power = (powerFar.calculate(d, v)) + offSet;
         }
         return 0;
     }

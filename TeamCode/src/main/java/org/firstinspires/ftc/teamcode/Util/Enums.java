@@ -24,8 +24,8 @@ public class Enums {
     }
     public static enum Angle{
         LOW_DIS(0),
-        MID_DIS(0.225),
-        HIGH_DIS(0.5);
+        MID_DIS(0),
+        HIGH_DIS(0.2);
         private double value;
 
 

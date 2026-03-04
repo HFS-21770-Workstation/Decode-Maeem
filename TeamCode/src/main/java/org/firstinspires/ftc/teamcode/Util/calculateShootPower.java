@@ -1,21 +1,26 @@
 package org.firstinspires.ftc.teamcode.Util;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class calculateShootPower {
+
     double[] a;
 
     private calculateShootPower(double[][] matrix) {
         matrix = diagonalizationMatrix(matrix);
-        this.a = new double[6];
-
+        this.a = new double[matrix.length];
         for (int i = 0; i < matrix.length; i++) {
             a[i] = matrix[i][matrix[i].length - 1];
         }
     }
 
-    public static double[] multiplyRow(double[] row, double p){
+    public static double[] multiplyRow(double[] row, double p) {
         double[] outPut = new double[row.length];
         for (int i = 0; i < row.length; i++) {
             outPut[i] = row[i] * p;
+
         }
         return outPut;
     }
@@ -35,8 +40,9 @@ public class calculateShootPower {
         mat[j] = temp;
     }
 
-    public static double[][] diagonalizationMatrix(double[][] mat){
+    public static double[][] diagonalizationMatrix(double[][] mat) {
         int rows = mat.length;
+        int cols = mat[0].length;
         for (int i = 0; i < rows; i++) {
             int maxRow = i;
             for (int k = i + 1; k < rows; k++) {
@@ -45,9 +51,9 @@ public class calculateShootPower {
                 }
             }
             swapRows(mat, i, maxRow);
-            double first = mat[i][i];
-            if (Math.abs(first) > 1e-9) {
-                mat[i] = multiplyRow(mat[i], 1/first);
+            double pivot = mat[i][i];
+            if (Math.abs(pivot) > 1e-9) {
+                mat[i] = multiplyRow(mat[i], 1 / pivot);
                 for (int k = 0; k < rows; k++) {
                     if (k == i) continue;
                     double factor = mat[k][i];
@@ -58,30 +64,42 @@ public class calculateShootPower {
         return mat;
     }
 
-    public double calculate(double d, double v){
-        double result = a[0]*v*v + a[1]*d*v + a[2]*d*d + a[3]*v + a[4]*d + a[5];
-        return Math.max(0, Math.min(1, result));
+    public double calculateVelocity(double d) {
+        double velocity = 0;
+        for (int i = 0; i < a.length; i++) {
+            velocity += a[i] * Math.pow(d, i);
+        }
+        return velocity;
     }
 
-    public static class Builder{
-        public double[][] mat = new double[6][7];
-        int samples;
+    public double[] getPolynomial() {
+        return a;
+    }
 
-        public Builder(){
-            samples = 0;
-        }
+    public static class Builder {
+        private List<double[]> samplesList = new ArrayList<>();
 
-        public Builder addSample(double d, double v, double p){
-            if (samples == 6) return this;
-            double[] sampleRow = {v*v, d*v, d*d, v, d, 1, p};
-            mat[samples] = sampleRow;
-            samples++;
+        public Builder() {}
+
+        public Builder addSample(double d, double p) {
+            samplesList.add(new double[]{d, p});
             return this;
         }
 
-        public calculateShootPower build(){
-            if (samples == 6) return new calculateShootPower(mat);
-            return null;
+        public calculateShootPower build() {
+            int n = samplesList.size();
+            if (n < 2) return null;
+
+            double[][] mat = new double[n][n + 1];
+            for (int i = 0; i < n; i++) {
+                double d = samplesList.get(i)[0];
+                double p = samplesList.get(i)[1];
+                for (int j = 0; j < n; j++) {
+                    mat[i][j] = Math.pow(d, j);
+                }
+                mat[i][n] = p;
+            }
+            return new calculateShootPower(mat);
         }
     }
 }

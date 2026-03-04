@@ -64,7 +64,6 @@ import java.util.concurrent.TimeUnit;
  */
 
 @TeleOp(name="Optimize AprilTag Exposure", group = "Concept")
-@Disabled
 public class ConceptAprilTagOptimizeExposure extends LinearOpMode
 {
     private VisionPortal visionPortal = null;        // Used to manage the video source.
@@ -121,10 +120,10 @@ public class ConceptAprilTagOptimizeExposure extends LinearOpMode
             telemetry.update();
 
             // check to see if we need to change exposure or gain.
-            thisExpUp = gamepad1.left_bumper;
-            thisExpDn = gamepad1.left_trigger > 0.25;
-            thisGainUp = gamepad1.right_bumper;
-            thisGainDn = gamepad1.right_trigger > 0.25;
+            thisExpUp = gamepad1.x;
+            thisExpDn = gamepad1.b;
+            thisGainUp = gamepad1.y;
+            thisGainDn = gamepad1.a;
 
             // look for clicks to change exposure
             if (thisExpUp && !lastExpUp) {
@@ -162,7 +161,7 @@ public class ConceptAprilTagOptimizeExposure extends LinearOpMode
 
         // Create the WEBCAM vision portal by using a builder.
         visionPortal = new VisionPortal.Builder()
-                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 2"))
                 .addProcessor(aprilTag)
                 .build();
     }

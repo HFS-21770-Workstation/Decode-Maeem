@@ -29,17 +29,20 @@ public class RedCloseAuto extends LinearOpMode {
     Storage storage;
     VoltageSensor voltageSensor;
 
+    double dis;
+    boolean startShoot = false;
     @Override
     public void runOpMode() throws InterruptedException {
-        Pose2d startPose = new Pose2d(-55.684, 38.344, Math.toRadians(0));
+        Pose2d startPose = new Pose2d(-69.4145, 38.6391, Math.toRadians(0));
+        Vector2d moveVector = new Vector2d(-60,28);
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
 
 
-        turret = Turret.getInstance(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
-        driveOpModeRed.turret = turret;
-        driveOpModeRedAutoShooter.turret = turret;
+        turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
+//        driveOpModeRed.turret = turret;
+//        driveOpModeRedAutoShooter.turret = turret;
 //        shooter = Shooter.getInstance(hardwareMap);
-        storage = Storage.getInstance(hardwareMap);
+        storage = new Storage(hardwareMap);
         double currentShooterPower;
 //        shooter.initPos();
 //        shooter.startCal();
@@ -54,19 +57,33 @@ public class RedCloseAuto extends LinearOpMode {
             @Override
             public void run() {
                 while (opModeIsActive()) {
+                    drive.updatePoseEstimate();
                     Pose2d pose = drive.localizer.getPose();
                     turret.updatePIDAlignment(GoalColor.RED, 0);
                     turret.update(pose);
+                    dis = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
+                    telemetry.addData("Dis", dis);
+                    telemetry.addData("Shooter Vel", shooter.getVelocity());
+                    telemetry.addData("Shooter Target Vel", shooter.getVelocity());
+                    shooter.changeAngle(shooter.getServoPositionWithDistance(dis),
+                            shooter.getServoPositionWithDistance(dis));
+
+                    if(!startShoot){
+                        shooter.stop();
+                    }
+                    else{
+                        shooter.setVelocity(shooter.shootWithAutoPower(dis, 100));
+                    }
                 }
             }
         });
 
         Action move = drive.actionBuilder(startPose)
-                        .strafeTo(new Vector2d(startPose.position.x, startPose.position.y - 24))
+                        .strafeTo(moveVector)
                         .build();
 
         waitForStart();
-        alighnTurret.start();
+//        alighnTurret.start();
 
         Actions.runBlocking(
                 move

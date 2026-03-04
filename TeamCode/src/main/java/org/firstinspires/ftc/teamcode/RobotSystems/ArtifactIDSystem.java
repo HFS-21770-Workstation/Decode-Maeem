@@ -1,45 +1,73 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
+import android.util.Size;
+
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.VisionProcessor;
 import org.firstinspires.ftc.vision.opencv.ImageRegion;
 import org.firstinspires.ftc.vision.opencv.PredominantColorProcessor;
 
-import kotlin.NotImplementedError;
-
 public class ArtifactIDSystem {
-    
-    public static final VisionProcessor[] processors = new VisionProcessor[]{
-            /* Back Artifact */ getProcessor(ImageRegion.asImageCoordinates(/* arbitrary */ 10, 10, 10, 100))
-            // TODO: Add Left and Right Artifacts
-            
-    };
-    
-    private final WebcamName camera;
-    private final VisionPortal portal;
 
-    public ArtifactIDSystem(WebcamName camera) {
-        this.camera = camera;
-        this.portal = VisionPortal.easyCreateWithDefaults(camera, ArtifactIDSystem.processors);
-        
+    private VisionPortal portal;
+
+    private PredominantColorProcessor slot1Processor;
+    private PredominantColorProcessor slot2Processor;
+    private PredominantColorProcessor slot3Processor;
+
+    public ArtifactIDSystem(HardwareMap hardwareMap) {
+
+        WebcamName camera = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        slot1Processor = createProcessor(100, 475, 325, 600);
+        slot2Processor = createProcessor(0, 50, 100, 200);
+        slot3Processor = createProcessor(300, 50, 500, 150);
+
+        portal = new VisionPortal.Builder()
+                .setCamera(camera)
+                .addProcessor(slot1Processor)
+                .addProcessor(slot2Processor)
+                .addProcessor(slot3Processor)
+                .enableLiveView(true)
+                .setAutoStopLiveView(false)
+                .setCameraResolution(new Size(640, 480))
+
+                .build();
     }
 
+    private PredominantColorProcessor createProcessor(int left, int top, int right, int bottom) {
+        return new PredominantColorProcessor.Builder()
+                .setRoi(ImageRegion.asImageCoordinates(left, top, right, bottom))
+                .setSwatches(
+                        PredominantColorProcessor.Swatch.ARTIFACT_GREEN,
+                        PredominantColorProcessor.Swatch.ARTIFACT_PURPLE
+                )
+                .build();
+    }
 
     public void start() {
-        throw new NotImplementedError();
+        if (portal != null) {
+            portal.resumeStreaming();
+        }
     }
-    
+
     public void stop() {
-        throw new NotImplementedError();
+        if (portal != null) {
+            portal.stopStreaming();
+            portal.close();
+        }
     }
-    
-    
-    private static PredominantColorProcessor getProcessor(ImageRegion region) {
-        return new PredominantColorProcessor.Builder()
-                .setRoi(region)
-                .setSwatches(PredominantColorProcessor.Swatch.ARTIFACT_GREEN,
-                             PredominantColorProcessor.Swatch.ARTIFACT_PURPLE)
-                .build();
+
+    public int[] getSlot1RGB() {
+        return slot1Processor.getAnalysis().RGB;
+    }
+
+    public int[] getSlot2RGB() {
+        return slot2Processor.getAnalysis().RGB;
+    }
+
+    public int[] getSlot3RGB() {
+        return slot3Processor.getAnalysis().RGB;
     }
 }

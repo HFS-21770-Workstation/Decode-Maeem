@@ -71,7 +71,7 @@ public class AprilTagWebCamSystem {
                 .build();
 
         VisionPortal.Builder builder = new VisionPortal.Builder();
-        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"));
+        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 2"));
         builder.setCameraResolution(new Size(640, 480));
         builder.addProcessor(aprilTagProcessor);
 //        builder.addProcessor(processor);
@@ -130,16 +130,17 @@ public class AprilTagWebCamSystem {
     ///
     /// RET VALUE: x, y, rx
     ///
-    public double[] getRobotPoseByID(GoalColor goalColor) {
+    public Pose2d getRobotPoseByID(GoalColor goalColor) {
         double[] retValue = new double[3];
 
         AprilTagDetection detection = this.getDetectionByID(goalColor);
         if (detection != null) {
+            double x = Math.round(detection.robotPose.getPosition().x * 100) / 100.0;
+            double y = Math.round(detection.robotPose.getPosition().y * 100) / 100.0;
+            double heading = Math.round(detection.robotPose.getOrientation().getYaw() * 100) / 100.0;
+            Pose2d pose = new Pose2d(x, y, heading);
 
-            retValue[0] = detection.robotPose.getPosition().x;
-            retValue[1] = detection.robotPose.getPosition().y;
-            retValue[2] = detection.robotPose.getOrientation().getYaw();
-            return retValue;
+            return pose;
         } else {
             return null;
         }

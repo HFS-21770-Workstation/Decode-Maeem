@@ -27,16 +27,23 @@ public class turretTest extends OpMode {
 
     MecanumDrive mecanumDrive;
     Turret turret;
-    Shooter shooter;
+//    Shooter shooter;
     boolean startShot;
+
+    public static double kp = 0.00000001;
+    public static double ki = 0.00000001;
+    public static double kd = 0.00000001;
+
+    public int index = 0;
+
 
     // Dashboard variables
     FtcDashboard dashboard = FtcDashboard.getInstance();
-    Pose2d startPose = new Pose2d(61, 15, Math.toRadians(180));
+    Pose2d startPose = new Pose2d(0, 0, Math.toRadians(0));
 
 
-    VoltageSensor voltageSensor;
-    Storage storage;
+//    VoltageSensor voltageSensor;
+//    Storage storage;
 //    AprilTagWebCamSystem aprilTagWebCamSystem;
 
     final double pos = 0.1;
@@ -46,9 +53,7 @@ public class turretTest extends OpMode {
 
     @Override
     public void start(){
-
         turret.startFunction();
-//        shooter.startCal();
     }
 
     @Override
@@ -62,10 +67,10 @@ public class turretTest extends OpMode {
 //        shooter = Shooter.getInstance(hardwareMap);
 //        shooter.initPos();
 
-        voltageSensor = hardwareMap.voltageSensor.iterator().next();
-
-        storage = Storage.getInstance(hardwareMap);
-        storage.initServos();
+//        voltageSensor = hardwareMap.voltageSensor.iterator().next();
+//
+//        storage = Storage.getInstance(hardwareMap);
+//        storage.initServos();
 
 //        aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
 
@@ -76,10 +81,9 @@ public class turretTest extends OpMode {
 
     @Override
     public void loop() {
-
         mecanumDrive.updatePoseEstimate();
         double distance = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
-
+        turret.pidController.updateValues(kp, ki, kd, 1);
 
         Pose2d currentPose = mecanumDrive.localizer.getPose();
 
@@ -98,63 +102,35 @@ public class turretTest extends OpMode {
 
         turret.updatePIDAlignment(GoalColor.RED, turretOffset);
 
-        if(gamepad2.dpadRightWasPressed()){
-            turretOffset += 1;
+        if(gamepad1.dpadUpWasPressed()){
+            if(index == 0){
+                kp *= 10;
+            }
+            else if(index == 1){
+                ki *= 10;
+            }
+            else{
+                kd *= 10;
+            }
         }
-        if(gamepad2.dpadLeftWasPressed()){
-            turretOffset -= 1;
-        }
-
-        if (gamepad1.yWasPressed()) {
-            startShot = !startShot;
-            if (!startShot) {
-//                shooter.startShoot(0);
+        if(gamepad1.dpadDownWasPressed()){
+            if(index == 0){
+                kp /= 10;
+            }
+            else if(index == 1){
+                ki /= 10;
+            }
+            else{
+                kd /= 10;
             }
         }
 
-
-        if (startShot) {
-//            double currentPower = shooter.shootWithAutoPower(distance, voltageSensor.getVoltage(), 0);
-//            shooter.startShoot(currentPower);
+        if(gamepad1.dpadLeftWasPressed()){
+            index -= 1;
         }
-
-//        if(gamepad1.yWasPressed()){
-//            shooter.StartShoot(shooter.GetPower() + power);
-//        }
-//        if(gamepad1.aWasPressed()) {
-//            shooter.StartShoot(shooter.GetPower() - power);
-//        }
-        if (gamepad1.right_trigger == 1){
-            shooter.stopShoot();
+        if(gamepad1.dpadRightWasPressed()){
+            index += 1;
         }
-//        shooter.changeAngle(shooter.getServoPositionWithDistance(distance),
-//                shooter.getServoPositionWithDistance(distance));
-
-//        if (gamepad1.dpadUpWasPressed()) {
-//            shooter.ChangeAngle(shooter.GetPosR() + pos, shooter.GetPosL() + pos);
-//        }
-//        if (gamepad1.dpadDownWasPressed()) {
-//            shooter.ChangeAngle(shooter.GetPosR() - pos, shooter.GetPosL() - pos);
-//        }
-
-        storage.checkTime();
-
-        if (!storage.waitingForDown) {
-            storage.updateColorSensors();
-        }
-        if(gamepad1.xWasPressed()){
-            storage.setOutPutArtifacts(Artifacts.PURPLE);
-
-
-        }
-        if(gamepad1.bWasPressed()){
-            storage.setOutPutArtifacts(Artifacts.GREEN);
-
-        }
-//        telemetry.addData("slots1", storage.getArtifactsStorage()[0]);
-//        telemetry.addData("slots2", storage.getArtifactsStorage()[1]);
-//        telemetry.addData("slots3", storage.getArtifactsStorage()[2]);
-
 
         // 5. THE DRAWING LOGIC
         TelemetryPacket packet = new TelemetryPacket();
@@ -166,7 +142,7 @@ public class turretTest extends OpMode {
 
         double turretAngle = Math.toRadians(turret.getCurrentAngleFromEncoder());
         double lineLength = 10.0;
-        field.setStroke("#FF0000"); // Red for turret
+        field.setStroke("#FF0000"); // RED for turret
         field.strokeLine(
                 currentPose.position.x,
                 currentPose.position.y,
@@ -183,14 +159,15 @@ public class turretTest extends OpMode {
         telemetry.addData("target angle:", turret.getTargetAngleFromEncoder(GoalColor.RED));
         telemetry.addData("error:", turret.pidController.getError());
 //        telemetry.addData("output", turret.pidController.getOutput());
-        telemetry.addData("Power:", shooter.getPower());
-        telemetry.addData("Volt:", voltageSensor.getVoltage());
+//        telemetry.addData("Power:", shooter.getPower());
+//        telemetry.addData("Volt:", voltageSensor.getVoltage());
         telemetry.addData("distance:", distance);
+        telemetry.addData("camera", turret.isTagVisible());
         telemetry.update();
     }
 
-    @Override
-    public void stop(){
-        shooter.stopShoot();
-    }
+//    @Override
+//    public void stop(){
+//        shooter.stopShoot();
+//    }
 }

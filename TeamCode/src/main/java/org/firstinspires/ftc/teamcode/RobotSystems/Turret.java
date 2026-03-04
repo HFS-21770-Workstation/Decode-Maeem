@@ -54,11 +54,15 @@ public class Turret {
 
     public PIDController pidController;
 
-    public static double goalX = -64.98087;
-    public static double goalY = 72;
+    public static double goalX = -64.961;       //-69.5; // -59.39127
+    public static double goalY = 58.267;   //71; // 64.1121
 
+    private double encoderOffset = 0; // Offset to sync encoder with reality
+    private boolean wasTagVisible = false;
+    public static double MIN_ANGLE = -160.0;
+    public static double MAX_ANGLE = 190.0;
 
-    private Turret(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
+    public Turret(HardwareMap hardwareMap, Telemetry telemetry, FtcDashboard dashboard, Pose2d startPose){
         this.telemetry = telemetry;
         this.dashboard = dashboard;
         this.dashboardTelemetry = this.dashboard.getTelemetry();
@@ -67,7 +71,6 @@ public class Turret {
         yawMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, dashboard, startPose);
-
 
         // Turret.java inside constructor
         yawMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -93,6 +96,15 @@ public class Turret {
         dashboardTelemetry.update();
     }
 
+    // Helper to see if we are currently "calibrated"
+    public boolean isTagVisible() {
+        return wasTagVisible;
+    }
+
+    public double getCurrentAngle() {
+        return currentAngleFromEncoder;
+    }
+
     public void setPower(double power){
         yawMotor.setPower(power);
     }
@@ -107,7 +119,11 @@ public class Turret {
     }
 
     public void startFunction(){
-        this.pidController = new PIDController( 0.065, 0.00005, 0.001, 1, false);
+//        this.pidController = new PIDController( 0.065, 0.00005, 0.001, 1, false);
+//        this.pidController = new PIDController( 0.05, 0, 0, 1, false);
+//        this.pidController = new PIDController( 0.03, 0, 0, 1, false);
+        this.pidController = new PIDController( 0, 0, 0, 1, false);
+
         pidController.reset();
     }
 
@@ -120,8 +136,35 @@ public class Turret {
         return getCurrentNormalizedAngle() - detection.ftcPose.bearing;
     }
 
+//    public double getTargetAngleFromEncoder(GoalColor goalColor){
+////      double goalX = -62.98087;
+//
+//        if(goalColor.getValue() != 24){
+//            goalY = -72;
+//        }
+//
+//        // 1. Get Robot position from Road Runner Pose
+//        double robotX = aprilTagWebCamSystem.pose.position.x;
+//        double robotY = aprilTagWebCamSystem.pose.position.y;
+//
+//        // 2. Convert Robot Heading to Degrees (RR uses Radians)
+//        double robotHeadingDeg = Math.toDegrees(aprilTagWebCamSystem.pose.heading.toDouble());
+//
+//        // 3. Math.atan2 gives the angle from robot to goal in Radians
+//        double angleToGoalRad = Math.atan2(goalY - robotY, goalX - robotX);
+//
+//        // 4. Convert that to Degrees
+//        double absoluteFieldAngleDeg = Math.toDegrees(angleToGoalRad);
+//
+//        // 5. The turret target is the goal angle MINUS the robot's heading
+//        double targetAngle = absoluteFieldAngleDeg - robotHeadingDeg;
+//
+//        // 6. Keep it between -180 and 180
+//        return AngleUnit.normalizeDegrees(targetAngle);
+//    }
+
     public double getTargetAngleFromEncoder(GoalColor goalColor){
-//        double goalX = -62.98087;
+    //     double goalX = -62.98087;
 
         if(goalColor.getValue() != 24){
             goalY = -72;
@@ -147,6 +190,7 @@ public class Turret {
         return AngleUnit.normalizeDegrees(targetAngle);
     }
 
+
     public void updatePIDAlignment(GoalColor goalColor, double offset) {
         double target = getTargetAngleFromEncoder(goalColor) + offset;
         double current = getCurrentAngleFromEncoder();
@@ -158,6 +202,7 @@ public class Turret {
 
         yawMotor.setPower(power);
     }
+
 
     // GET CURRENT ANGLE FROM ENCODER
     public double getCurrentAngleFromEncoder(){
@@ -188,8 +233,8 @@ public class Turret {
 //        telemetry.addData("currentCameraAngle", currentCameraAngle);
 
         dashboardTelemetry.addData("current angle", currentAngleFromEncoder);
-        dashboardTelemetry.addData("X", aprilTagWebCamSystem.pose.position.x);
-        dashboardTelemetry.addData("Y", aprilTagWebCamSystem.pose.position.y);
+//        dashboardTelemetry.addData("X", aprilTagWebCamSystem.pose.position.x);
+//        dashboardTelemetry.addData("Y", aprilTagWebCamSystem.pose.position.y);
 //        dashboardTelemetry.addData("current normilized angle", getCurrentNormalizedAngle());
 //        dashboardTelemetry.addData("currentCameraAngle", currentCameraAngle);
     }
