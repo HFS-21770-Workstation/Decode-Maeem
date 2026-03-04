@@ -2,25 +2,25 @@ package org.firstinspires.ftc.teamcode.RobotSystems;
 
 import android.util.Size;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.opencv.ImageRegion;
 import org.firstinspires.ftc.vision.opencv.PredominantColorProcessor;
-
+@Config
 public class ArtifactIDSystem {
 
     private VisionPortal portal;
 
-    private PredominantColorProcessor slot1Processor;
-    private PredominantColorProcessor slot2Processor;
-    private PredominantColorProcessor slot3Processor;
+    private final PredominantColorProcessor slot1Processor;
+    private final PredominantColorProcessor slot2Processor;
+    private final PredominantColorProcessor slot3Processor;
 
     public ArtifactIDSystem(HardwareMap hardwareMap) {
 
         WebcamName camera = hardwareMap.get(WebcamName.class, "Webcam 1");
-
-        slot1Processor = createProcessor(100, 475, 325, 600);
+        slot1Processor = createProcessor(100, 350, 325, 400);
         slot2Processor = createProcessor(0, 50, 100, 200);
         slot3Processor = createProcessor(300, 50, 500, 150);
 
@@ -29,7 +29,7 @@ public class ArtifactIDSystem {
                 .addProcessor(slot1Processor)
                 .addProcessor(slot2Processor)
                 .addProcessor(slot3Processor)
-                .enableLiveView(true)
+                .enableLiveView(false)
                 .setAutoStopLiveView(false)
                 .setCameraResolution(new Size(640, 480))
 

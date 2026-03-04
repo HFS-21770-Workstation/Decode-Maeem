@@ -27,7 +27,7 @@ public class turretTest extends OpMode {
 
     MecanumDrive mecanumDrive;
     Turret turret;
-//    Shooter shooter;
+    Shooter shooter;
     boolean startShot;
 
     public static double kp = 0.00000001;
@@ -43,7 +43,7 @@ public class turretTest extends OpMode {
 
 
 //    VoltageSensor voltageSensor;
-//    Storage storage;
+    Storage storage;
 //    AprilTagWebCamSystem aprilTagWebCamSystem;
 
     final double pos = 0.1;
@@ -64,13 +64,13 @@ public class turretTest extends OpMode {
         // Initialize Turret
         turret = Turret.getInstance(hardwareMap, telemetry, dashboard, startPose);
 
-//        shooter = Shooter.getInstance(hardwareMap);
+        shooter = new Shooter(hardwareMap);
 //        shooter.initPos();
 
 //        voltageSensor = hardwareMap.voltageSensor.iterator().next();
 //
-//        storage = Storage.getInstance(hardwareMap);
-//        storage.initServos();
+        storage = new Storage(hardwareMap);
+        storage.initServos();
 
 //        aprilTagWebCamSystem = new AprilTagWebCamSystem(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
 

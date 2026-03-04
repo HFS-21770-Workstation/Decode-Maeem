@@ -122,7 +122,7 @@ public class Turret {
 //        this.pidController = new PIDController( 0.065, 0.00005, 0.001, 1, false);
 //        this.pidController = new PIDController( 0.05, 0, 0, 1, false);
 //        this.pidController = new PIDController( 0.03, 0, 0, 1, false);
-        this.pidController = new PIDController( 0, 0, 0, 1, false);
+        this.pidController = new PIDController( 0.02, 0, 0.001, 1, false);
 
         pidController.reset();
     }

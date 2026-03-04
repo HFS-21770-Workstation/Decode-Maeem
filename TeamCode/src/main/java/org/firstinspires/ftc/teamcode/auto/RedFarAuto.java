@@ -69,9 +69,11 @@ public class RedFarAuto extends LinearOpMode {
 
         turret.startFunction();
 
-
         while (!isStarted() && !isStopRequested()) {
             turret.update(startPose);
+            storage.start();
+
+
         }
 
         Action first_score = drive.actionBuilder(startPose)
@@ -164,25 +166,44 @@ public class RedFarAuto extends LinearOpMode {
 
         );
 
+//        Action shootPPG = new SequentialAction(
+//                new SleepAction(1.5),
+//                storage.outputArtifactsByIndex(2),
+//                new SleepAction(1.5),
+////                new SleepAction(0.5),
+//                storage.initServoAction(),
+////                new SleepAction(0.5),
+//                new SleepAction(1.5),
+//                storage.outputArtifactsByIndex(1),
+//                new SleepAction(1.5),
+////                new SleepAction(0.5),
+//                storage.initServoAction(),
+////                new SleepAction(0.5),
+//                new SleepAction(1.5),
+//                storage.outputArtifactsByIndex(0),
+//                new SleepAction(1.5),
+////                new SleepAction(0.5),
+//                storage.initServoAction()
+//        );
+
         Action shootPPG = new SequentialAction(
+                storage.updateColorSensorsAction(),
                 new SleepAction(1.5),
-                storage.outputArtifactsByIndex(2),
+                storage.outPutArtifactPurple(),
                 new SleepAction(1.5),
-//                new SleepAction(0.5),
                 storage.initServoAction(),
-//                new SleepAction(0.5),
+                storage.updateColorSensorsAction(),
                 new SleepAction(1.5),
-                storage.outputArtifactsByIndex(1),
+                storage.outPutArtifactPurple(),
                 new SleepAction(1.5),
-//                new SleepAction(0.5),
                 storage.initServoAction(),
-//                new SleepAction(0.5),
+                storage.updateColorSensorsAction(),
                 new SleepAction(1.5),
-                storage.outputArtifactsByIndex(0),
+                storage.outPutArtifactGreen(),
                 new SleepAction(1.5),
-//                new SleepAction(0.5),
-                storage.initServoAction()
-        );
+                storage.initServoAction(),
+                storage.updateColorSensorsAction()
+                );
 
         Action shootRandom = new SequentialAction(
                 new SleepAction(1),

@@ -1,47 +1,65 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
+import static org.firstinspires.ftc.teamcode.RobotSystems.Storage.slot2RGB;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.RobotSystems.ArtifactIDSystem;
+import org.firstinspires.ftc.teamcode.RobotSystems.Storage;
+import org.firstinspires.ftc.teamcode.Util.Enums;
 
+@Config
 @TeleOp(name = "ColorDetectionCamTest")
 public class ColorDetectionCamTest extends OpMode {
-
-    private ArtifactIDSystem artifactIDSystem;
+    Storage storage;
+//    private ArtifactIDSystem artifactIDSystem;
+    FtcDashboard dashboard = FtcDashboard.getInstance();
+    Enums.Artifacts slots[];
 
     @Override
     public void init() {
-        try {
-            artifactIDSystem = new ArtifactIDSystem(hardwareMap);
-            telemetry.addLine("Camera Initialized");
-        } catch (Exception e) {
-            telemetry.addData("Init Error", e.getMessage());
-        }
-        telemetry.update();
+        storage = new Storage(hardwareMap);
+        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+        storage.initServos();
+
+
+
+
     }
 
     @Override
     public void start() {
-        artifactIDSystem.start();
+        storage.start();
     }
 
     @Override
     public void loop() {
-        int[] rgb1 = artifactIDSystem.getSlot1RGB();
-        int[] rgb2 = artifactIDSystem.getSlot2RGB();
-        int[] rgb3 = artifactIDSystem.getSlot3RGB();
+        storage.checkTime();
 
-        telemetry.addData("Slot1 RGB", "R:%d G:%d B:%d", rgb1[0], rgb1[1], rgb1[2]);
-        telemetry.addData("Slot2 RGB", "R:%d G:%d B:%d", rgb2[0], rgb2[1], rgb2[2]);
-        telemetry.addData("Slot3 RGB", "R:%d G:%d B:%d", rgb3[0], rgb3[1], rgb3[2]);
+        if (!storage.waitingForDown) {
+            storage.updateColorSensors();
+        }
+
+        if (gamepad1.aWasPressed()){
+            storage.setOutPutArtifacts(Enums.Artifacts.PURPLE);
+
+        }
+        if (gamepad1.bWasPressed()){
+            storage.setOutPutArtifacts(Enums.Artifacts.GREEN);
+
+        }
+        slots = storage.getArtifactsStorage();
+        telemetry.addData("Slot1 RGB", slots[0]);
+        telemetry.addData("Slot2 RGB", slots[1]);
+        telemetry.addData("Slot3 RGB", slots[2]);
+        telemetry.addData("s2","Slot2 RGB: R:" + slot2RGB[0] + " G:" + slot2RGB[1] + " B:" + slot2RGB[2]);
         telemetry.update();
     }
 
-    @Override
-    public void stop() {
-        if (artifactIDSystem != null) {
-            artifactIDSystem.stop();
-        }
-    }
+
 }

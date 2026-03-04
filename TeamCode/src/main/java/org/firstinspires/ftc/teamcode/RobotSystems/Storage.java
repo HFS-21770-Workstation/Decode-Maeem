@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.RobotSystems;
 
 import androidx.annotation.NonNull;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -9,11 +10,13 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 import org.firstinspires.ftc.teamcode.Util.RGB;
 
 import java.util.Random;
 
+@Config
 
 public class Storage{
     Servo servoPusher1;
@@ -21,19 +24,22 @@ public class Storage{
     Servo servoPusher3;
 
     Random rnd = new Random();
-
+    ArtifactIDSystem artifactIDSystem;
     ColorSensor colorSensorA;
     ColorSensor colorSensorB;
     ColorSensor colorSensorC;
-
+    public static int[] slot2RGB;
     private static Storage INSTANCE;
 
     public static boolean sort;
     public static boolean waitingForDown = false;
 
     final int ALPHA_FOR_DETECTION = 200;
-    RGB purpleRGB = new RGB(205.23727,251.49541 ,536.62102);
-    RGB greenRGB = new RGB(107.80042,534.36401 ,357.83555);
+//    RGB purpleRGB = new RGB(205.23727,251.49541 ,536.62102);
+//    RGB greenRGB = new RGB(107.80042,534.36401 ,357.83555);
+    RGB purpleRGB = new RGB(163,200,241);
+    RGB greenRGB = new RGB(87,141,115);
+    RGB nullRGb = new RGB(167,170,141);
     public Artifacts[] artifactsStorage = new Artifacts[] {Artifacts.NONE, Artifacts.NONE, Artifacts.NONE};
     public Servo[] servoPushers;
     ElapsedTime time = new ElapsedTime();
@@ -41,7 +47,11 @@ public class Storage{
     final double[] UP_POS   = {1, 1, 0};
     final double[] DOWN_POS = {0, 0, 1};
 
+    final double COLOR_THRESHOLD = 140;
+    final int BRIGHTNESS_THRESHOLD = 180;
+
     public Storage(HardwareMap hardwareMap) {
+        artifactIDSystem = new ArtifactIDSystem(hardwareMap);
         colorSensorA = hardwareMap.colorSensor.get("colorSensorA");
         colorSensorB = hardwareMap.colorSensor.get("colorSensorB");
         colorSensorC = hardwareMap.colorSensor.get("colorSensorC");
@@ -62,7 +72,9 @@ public class Storage{
         INSTANCE = null;
     }
 
-
+    public void start(){
+        artifactIDSystem.start();
+    }
 
 //    public void rotate(){
 //        if(sort && colorSensorA.alpha() > ALPHA_FOR_DETECTION ){
@@ -87,23 +99,58 @@ public class Storage{
 //    }
 
     public void updateColorSensors(){
-        artifactsStorage[0] = getColor(colorSensorA);
-        artifactsStorage[2] = getColor(colorSensorB);
-        artifactsStorage[1] = getColor(colorSensorC);
+//        artifactsStorage[0] = getColor(colorSensorA);
+//        artifactsStorage[2] = getColor(colorSensorB);
+//        artifactsStorage[1] = getColor(colorSensorC);
+        artifactsStorage[0] = getColor(artifactIDSystem.getSlot1RGB());
+        artifactsStorage[1] = getColor(artifactIDSystem.getSlot2RGB());
+        artifactsStorage[2] = getColor(artifactIDSystem.getSlot3RGB());
+
+        slot2RGB = artifactIDSystem.getSlot2RGB();
     }
 
 
-    public Artifacts getColor(ColorSensor colorSensor){
-        RGB rgb = new RGB(colorSensor.red(), colorSensor.green(), colorSensor.blue());
+//    public Artifacts getColor(ColorSensor colorSensor){
+//        RGB rgb = new RGB(colorSensor.red(), colorSensor.green(), colorSensor.blue());
+//
+//        if(colorSensor.alpha() >= ALPHA_FOR_DETECTION){
+//             if(rgb.dis(purpleRGB) > rgb.dis(greenRGB)){
+//                 return Artifacts.GREEN;
+//             }else{
+//                 return Artifacts.PURPLE;
+//             }
+//        }else{
+//            return Artifacts.NONE;
+//        }
+//    }
 
-        if(colorSensor.alpha() >= ALPHA_FOR_DETECTION){
-             if(rgb.dis(purpleRGB) > rgb.dis(greenRGB)){
-                 return Artifacts.GREEN;
-             }else{
-                 return Artifacts.PURPLE;
-             }
-        }else{
+    public Artifacts getColor(int[] slotRgb){
+
+        int r = slotRgb[0];
+        int g = slotRgb[1];
+        int b = slotRgb[2];
+
+        RGB rgb = new RGB(r, g, b);
+
+        int brightness = r + g + b;
+        if(brightness < BRIGHTNESS_THRESHOLD){
             return Artifacts.NONE;
+        }
+
+        if(rgb.dis(nullRGb) < COLOR_THRESHOLD){
+            return Artifacts.NONE;
+        }
+
+
+        double distPurple = rgb.dis(purpleRGB);
+        double distGreen  = rgb.dis(greenRGB);
+
+
+
+        if(distPurple > distGreen){
+            return Artifacts.GREEN;
+        }else{
+            return Artifacts.PURPLE;
         }
     }
     public void setOutPutArtifacts (Artifacts artifact){
