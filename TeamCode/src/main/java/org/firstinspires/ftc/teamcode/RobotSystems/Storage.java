@@ -319,7 +319,56 @@ public class Storage{
 
 
 
+    public class OutPutBySort implements Action {
+        private final Artifacts[] sort;
+        private int step = 0;
+        private int currentSlot = -1;
+        private boolean isRunning = false;
 
+        public OutPutBySort(Artifacts[] sort) {
+            this.sort = sort;
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            if (sort == null || step >= sort.length) {
+                initServos();
+                return false;
+            }
+
+            updateColorSensors();
+            Artifacts target = sort[step];
+
+            if (!isRunning) {
+                for (int i = 0; i < 3; i++) {
+                    if (artifactsStorage[i] == target) {
+                        currentSlot = i;
+                        setOutPutArtifacts(target);
+                        isRunning = true;
+                        break;
+                    }
+                }
+                if (!isRunning) {
+                    step++;
+                    return true;
+                }
+            }
+
+            if (artifactsStorage[currentSlot] == Artifacts.NONE) {
+                initServos();
+                waitingForDown = false;
+                currentSlot = -1;
+                isRunning = false;
+                step++;
+            }
+
+            return true;
+        }
+    }
+
+    public Action outPutBySort(Artifacts[] sort) {
+        return new OutPutBySort(sort);
+    }
 
 
     public class InitServoAction implements Action{
@@ -333,4 +382,10 @@ public class Storage{
     public Action initServoAction(){
         return new InitServoAction();
     }
+
+
+
+
 }
+
+
