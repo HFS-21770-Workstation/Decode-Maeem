@@ -141,6 +141,7 @@ public class RedFarAuto6Artifacts extends LinearOpMode {
 
             finalShoot = storage.outPutBySort(currentSort);
 
+            Actions.runBlocking(finalShoot);
             return false;
         };
         Action shootAction = new ParallelAction(
@@ -211,28 +212,30 @@ public class RedFarAuto6Artifacts extends LinearOpMode {
                 new SequentialAction(
                         first_score,
                         new SleepAction(0.3),
-                        shoot_logic,
-                        finalShoot,
-
+                        shoot_logic
+                )
+        );
+        Actions.runBlocking(
+                new SequentialAction(
                         new ParallelAction(
                                 (telemetryPacket) -> { startShoot = false; return false; },
                                 intake.startIntakeAction(),
                                 first_intake
                         ),
-
                         new ParallelAction(
                                 intake.stopIntakeAction(),
                                 second_score,
                                 (telemetryPacket) -> { startShoot = true; return false; }
                         ),
-
                         new SleepAction(0.8),
 
-                        storage.outPutBySort(currentSort)
+                        // ירי סבב שני
+                        (telemetryPacket) -> {
+                            Actions.runBlocking(storage.outPutBySort(currentSort));
+                            return false;
+                        }
                 )
         );
-
-        startShoot = false;
         Actions.runBlocking(
             new SleepAction(2)
         );

@@ -40,7 +40,7 @@ public class ShootTest extends OpMode {
     public static double ki = 0;
     public static double kd = 0;
 
-    Pose2d startPose = new Pose2d(0, 0, Math.toRadians(0));
+    Pose2d startPose = new Pose2d(61, 15, Math.toRadians(180));
 
     // Dashboard
     FtcDashboard dashboard = FtcDashboard.getInstance();

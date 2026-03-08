@@ -30,7 +30,8 @@ public class ArtifactIDSystem {
                 .addProcessor(slot2Processor)
                 .addProcessor(slot3Processor)
                 .enableLiveView(false)
-                .setAutoStopLiveView(false)
+//                .setAutoStopLiveView(false)
+//                .setLiveViewContainerId(2)
                 .setCameraResolution(new Size(640, 480))
 
                 .build();

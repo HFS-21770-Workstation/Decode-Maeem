@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.RobotSystems;
 
+import static android.os.SystemClock.sleep;
 import static org.opencv.android.Utils.matToBitmap;
 
 import android.graphics.Bitmap;
@@ -7,6 +8,7 @@ import android.graphics.Canvas;
 import android.util.Size;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -14,7 +16,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.function.Consumer;
 import org.firstinspires.ftc.robotcore.external.function.Continuation;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.Camera;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.WhiteBalanceControl;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
@@ -31,17 +37,21 @@ import org.opencv.core.Mat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-
+@Config
 public class AprilTagWebCamSystem {
 //     final CameraStreamProcessor processor = new CameraStreamProcessor();
-
+    public static int manualExposure = 30;  // milliseconds
+    public static int manualGain = 10;
+    public static int whiteBalanceTemp = 5000;
     private AprilTagProcessor aprilTagProcessor;
 
     private VisionPortal visionPortal;
 
     private List<AprilTagDetection> detectedTags = new ArrayList<>();
+
 
     Position cameraPosition = new Position(DistanceUnit.INCH, 0, 0, 0, 0);
     YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, 0, 0);
@@ -62,21 +72,77 @@ public class AprilTagWebCamSystem {
 
         aprilTagProcessor = new AprilTagProcessor.Builder()
                 .setCameraPose(cameraPosition, cameraOrientation)
+
                 .setDrawTagID(true)
                 .setDrawTagID(true)
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
                 .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
                 .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
+                .setLensIntrinsics(481.985, 481.985, 334.203, 241.948)
                 .build();
+        WebcamName camera = hardwareMap.get(WebcamName.class, "Webcam 2");
 
         VisionPortal.Builder builder = new VisionPortal.Builder();
-        builder.setCamera(hardwareMap.get(WebcamName.class, "Webcam 2"));
+        builder.setCamera(camera);
         builder.setCameraResolution(new Size(640, 480));
         builder.addProcessor(aprilTagProcessor);
 //        builder.addProcessor(processor);
+        builder.enableLiveView(true);
+
 
         visionPortal = builder.build();
+        setManualCamera();
+
+
+
+
+
+
+
+    }
+
+    private void setManualCamera() {
+        if (visionPortal == null) return;
+
+        // המתנה עד שהמצלמה מתחילה לזרום
+        while (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            telemetry.addData("Camera", "Waiting for stream...");
+            telemetry.update();
+            sleep(20);
+        }
+
+        telemetry.addData("Camera", "Ready in manual mode");
+        telemetry.update();
+
+        // --- Exposure ---
+        ExposureControl exposureControl = visionPortal.getCameraControl(ExposureControl.class);
+        if (exposureControl != null && exposureControl.getMode() != ExposureControl.Mode.Manual) {
+            exposureControl.setMode(ExposureControl.Mode.Manual);
+            sleep(50);
+        }
+        if (exposureControl != null) {
+            exposureControl.setExposure(manualExposure, TimeUnit.MILLISECONDS);  // ערך קבוע לדוגמה
+            sleep(20);
+        }
+
+        // --- Gain ---
+        GainControl gainControl = visionPortal.getCameraControl(GainControl.class);
+        if (gainControl != null) {
+            gainControl.setGain(manualGain);  // ערך קבוע לדוגמה
+            sleep(20);
+        }
+
+        // --- White Balance ---
+        WhiteBalanceControl wbControl = visionPortal.getCameraControl(WhiteBalanceControl.class);
+        if (wbControl != null && wbControl.getMode() != WhiteBalanceControl.Mode.MANUAL) {
+            wbControl.setMode(WhiteBalanceControl.Mode.MANUAL);
+            sleep(50);
+        }
+        if (wbControl != null) {
+            wbControl.setWhiteBalanceTemperature(whiteBalanceTemp);  // ערך קבוע לדוגמה
+            sleep(20);
+        }
     }
 
     public void update(Pose2d currentPose){
