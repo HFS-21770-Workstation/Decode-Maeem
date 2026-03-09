@@ -12,7 +12,6 @@ import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.RobotSystems.IntakeOld;
@@ -23,7 +22,6 @@ import org.firstinspires.ftc.teamcode.Util.Enums.Artifacts;
 import org.firstinspires.ftc.teamcode.Util.Enums.GoalColor;
 import org.firstinspires.ftc.teamcode.Util.PoseStorage;
 
-
 @Config
 @Autonomous(name = "Red Far 6 Artifacts", group = "Auto")
 public class RedFarAuto6Artifacts extends LinearOpMode {
@@ -31,273 +29,119 @@ public class RedFarAuto6Artifacts extends LinearOpMode {
     Turret turret;
     Shooter shooter;
     Storage storage;
-    Artifacts[] sort = null;
-    VoltageSensor voltageSensor;
-    public static double SHOOT_OFFSET = 0;
     double dis;
-    boolean startShoot = false;
+    volatile boolean startShoot = false;
     Artifacts[] currentSort;
-    Action finalShoot;
-    MecanumDrive drive1;
-
-
 
     @Override
     public void runOpMode() throws InterruptedException {
         intake = new IntakeOld(hardwareMap);
+        Pose2d startPose = new Pose2d(61, 15, Math.toRadians(180));
         Pose2d shootPose = new Pose2d(55.5, 10, Math.toRadians(180));
 
-        Pose2d startPose = new Pose2d(61, 15, Math.toRadians(180));
         MecanumDrive drive = new MecanumDrive(hardwareMap, startPose);
-
         storage = new Storage(hardwareMap);
         turret = new Turret(hardwareMap, telemetry, FtcDashboard.getInstance(), startPose);
-//        driveOpModeRed.turret = turret;
-//        driveOpModeRedAutoShooter.turret = turret;
         shooter = new Shooter(hardwareMap);
-        double currentShooterPower;
+
         shooter.initPos();
         shooter.startCal();
         storage.initServos();
-
-        voltageSensor = hardwareMap.voltageSensor.iterator().next();
-
         turret.startFunction();
 
-        while (!isStarted() && !isStopRequested()) {
-            turret.update(startPose);
-            storage.start();
-
-
-        }
-
         Action first_score = drive.actionBuilder(startPose)
-                .splineToLinearHeading(
-                        (shootPose),
-                        Math.toRadians(180),
-                        new TranslationalVelConstraint(30)
-                )
-                .waitSeconds(0.5)
+                .splineToLinearHeading(shootPose, Math.toRadians(180), new TranslationalVelConstraint(30))
                 .build();
 
         Action first_intake = drive.actionBuilder(shootPose)
-                .splineToLinearHeading(
-                        new Pose2d(35.4, 40, Math.toRadians(90)),
-                        Math.toRadians(90),
-                        new TranslationalVelConstraint(50)
-                )
+                .splineToLinearHeading(new Pose2d(34.5, 40, Math.toRadians(90)), Math.toRadians(90), new TranslationalVelConstraint(50))
                 .lineToY(46, (pose, path, v) -> 20)
                 .build();
 
         Action second_score = drive.actionBuilder(new Pose2d(35.4, 46, Math.toRadians(90)))
                 .setTangent(Math.toRadians(270))
-                .splineToLinearHeading(
-                        shootPose,
-                        Math.toRadians(135),
-                        new TranslationalVelConstraint(50)
-                )
+                .splineToLinearHeading(shootPose, Math.toRadians(135), new TranslationalVelConstraint(50))
                 .build();
 
-        Action second_intake = drive.actionBuilder(new Pose2d(61, 14, Math.toRadians(135)))
-                .setTangent(Math.toRadians(135))
-                .splineToLinearHeading(
-                        new Pose2d(12, 45, Math.toRadians(90)),
-                        Math.toRadians(90),
-                        new TranslationalVelConstraint(50)
-                )
-                .lineToY(48, (pose, path, v) -> 20)
-
-                .build();
-
-        Action third_score = drive.actionBuilder(new Pose2d(12, 30, Math.toRadians(90)))
-                .setTangent(Math.toRadians(180))
-                .splineToLinearHeading(
-                        shootPose,
-                        Math.toRadians(180),
-                        new TranslationalVelConstraint(30)
-                )
-                .waitSeconds(3)
-                .build();
-
-
-//        Action final_intake = drive.actionBuilder(new Pose2d(61, 14, Math.toRadians(135)))
-//                .setTangent(Math.toRadians(135))
-//                .splineToLinearHeading(
-//                        new Pose2d(12, 30, Math.toRadians(90)),
-//                        Math.toRadians(90),
-//                        new TranslationalVelConstraint(25)
-//                )
-//                .build();
-
-        Action shoot_logic = (telemetryPacket) -> {
+        Action detect_logic = (telemetryPacket) -> {
             currentSort = turret.aprilTagWebCamSystem.getObelisk();
-            for (int i = 0; currentSort == null && i < 100; i++) {
-                currentSort = turret.aprilTagWebCamSystem.getObelisk();
-            }
-
             if (currentSort == null) {
                 currentSort = new Artifacts[]{Artifacts.PURPLE, Artifacts.PURPLE, Artifacts.GREEN};
             }
-
-            finalShoot = storage.outPutBySort(currentSort);
-
-            Actions.runBlocking(finalShoot);
             return false;
         };
-        Action shootAction = new ParallelAction(
-            new SequentialAction(
-//                    new SleepAction(0.5),
-                    first_score,
-                    new SleepAction(0.5),
-                    shoot_logic
-            ),
-            storage.updateColorSensorsAction()
-        );
 
-        Thread alighnTurret = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (opModeIsActive()) {
-//                    drive.updatePoseEstimate();
-                    Pose2d pose = drive.localizer.getPose();
-                    turret.update(pose);
-                    turret.aprilTagWebCamSystem.update(pose);
-                    turret.updatePIDAlignment(GoalColor.RED, 0);
-                    dis = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
-                    telemetry.addData("Dis", dis);
-                    telemetry.addData("Shooter Vel", shooter.getVelocity());
-                    telemetry.addData("Shooter Target Vel", shooter.getVelocity());
-                    shooter.changeAngle(shooter.getServoPositionWithDistance(dis),
-                        shooter.getServoPositionWithDistance(dis));
+        Thread alignThread = new Thread(() -> {
+            while (opModeIsActive() && !isStopRequested()) {
+                Pose2d pose = drive.localizer.getPose();
+                turret.update(pose);
+                turret.aprilTagWebCamSystem.update(pose);
+                turret.updatePIDAlignment(GoalColor.RED, 0);
+                dis = turret.aprilTagWebCamSystem.getDistanceFromGoal(GoalColor.RED);
+                shooter.changeAngle(shooter.getServoPositionWithDistance(dis), shooter.getServoPositionWithDistance(dis));
 
-                    if(!startShoot){
-                        shooter.setVelocity(0);
-                    }
-                    else{
-                        shooter.setVelocity(shooter.shootWithAutoPower(dis, 100));
-                    }
-                }
+                if (!startShoot) shooter.setVelocity(0);
+                else shooter.setVelocity(shooter.shootWithAutoPower(dis, 100));
+
+                telemetry.addData("Distance", dis);
+                telemetry.update();
             }
         });
 
+        while (!isStarted() && !isStopRequested()) {
+            turret.update(startPose);
+            storage.start();
+            telemetry.update();
+        }
+
         waitForStart();
 
-        alighnTurret.start();
-//        alighnShooter.start();
+        Actions.runBlocking(detect_logic);
+        alignThread.start();
 
-//        Actions.runBlocking(
-//                new SequentialAction(
-//                    new SleepAction(0.5),
-//                    shootAction
-////                    first_score
-//
-//                )
-//        );
-//        startShoot = true;
-//        Actions.runBlocking(
-//                new SequentialAction(
-//                    finalShoot,
-//                    new SleepAction(2),
-//                    shootRandom,
-//                    new SleepAction(1),
-//                    move_from_park,
-//                    new SleepAction(10)
-//                )
-//        );
-//
-//        startShoot = false;
+        Actions.runBlocking(first_score);
+
         startShoot = true;
-
         Actions.runBlocking(
                 new SequentialAction(
-                        first_score,
-                        new SleepAction(0.3),
-                        shoot_logic
+                        storage.outPutBySort(currentSort),
+                        new SleepAction(0.3)
                 )
         );
+
+        startShoot = false;
+
         Actions.runBlocking(
                 new SequentialAction(
                         new ParallelAction(
-                                (telemetryPacket) -> { startShoot = false; return false; },
                                 intake.startIntakeAction(),
                                 first_intake
                         ),
+                        new SleepAction(0.5),
                         new ParallelAction(
                                 intake.stopIntakeAction(),
-                                second_score,
-                                (telemetryPacket) -> { startShoot = true; return false; }
-                        ),
-                        new SleepAction(0.8),
-
-                        // ירי סבב שני
-                        (telemetryPacket) -> {
-                            Actions.runBlocking(storage.outPutBySort(currentSort));
-                            return false;
-                        }
+                                second_score
+                        )
                 )
         );
+
+        startShoot = true;
         Actions.runBlocking(
-            new SleepAction(2)
+                new SequentialAction(
+                        new SleepAction(0.5),
+                        storage.outPutBySort(currentSort)
+                )
         );
 
-        alighnTurret.interrupt();
+        startShoot = false;
+        alignThread.interrupt();
 
-        drive1 = new MecanumDrive(hardwareMap, shootPose);
-
-        Action move_from_park = drive1.actionBuilder(shootPose)
+        Action park = drive.actionBuilder(shootPose)
                 .strafeTo(new Vector2d(shootPose.position.x - 1, shootPose.position.y + 30))
                 .build();
+        Actions.runBlocking(park);
 
-        Actions.runBlocking(
-                move_from_park
-        );
-
-
-        PoseStorage.pose = drive1.localizer.getPose();
+        PoseStorage.pose = drive.localizer.getPose();
         PoseStorage.currentPose = turret.getAngle();
     }
 }
-
-//        for(int i = 0; i < 10 && sort == null; i ++){
-//            sort = turret.aprilTagWebCamSystem.getObelisk();
-//        }
-//        telemetry.addData("Sort 1", sort[0]);
-//        telemetry.addData("Sort 2", sort[1]);
-//        telemetry.addData("Sort 3", sort[2]);
-
-
-//        storage.updateColorSensors();
-//
-//        Actions.runBlocking(
-//                new SequentialAction(
-//                        shootAction,
-//                        new SleepAction(2)
-//                )
-//        );
-
-//        Actions.runBlocking(
-//            new SequentialAction(
-//                    first_score,
-//                    new ParallelAction(
-//                        shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(24),
-//                            voltageSensor.getVoltage() + SHOOT_OFFSET),
-//                        turret.aimTurretAction(drive.localizer.getPose()),
-//                        shoot_sorted
-//                            ),
-//                    shooter.stopShootAction(),
-//                    intake.startIntakeAction(),
-//                    first_intake,
-//                    intake.stopIntakeAction(),
-//                    new ParallelAction(
-//                            shooter.shootWithAutoPowerAction(turret.aprilTagWebCamSystem.getDistanceFromGoal(24),
-//                                    voltageSensor.getVoltage() + SHOOT_OFFSET),
-//                            turret.aimTurretAction(drive.localizer.getPose())
-//                    ),
-//                    second_score,
-//                    intake.startIntakeAction(),
-//                    second_intake,
-//                    intake.stopIntakeAction(),
-//                    third_score
-//            )
-//
-//        );

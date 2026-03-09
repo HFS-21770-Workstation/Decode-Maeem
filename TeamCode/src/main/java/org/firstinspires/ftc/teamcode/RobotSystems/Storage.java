@@ -5,6 +5,8 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -317,60 +319,78 @@ public class Storage{
         return new UpdateColorSensorsAction();
     }
 
+    public Action outPutBySort(Artifacts[] sort) {
+        if (sort == null) return new SleepAction(0);
 
+        return new SequentialAction(
+                new SleepAction(0.5),
+                shootWithRecovery(sort[0], 0),
+                new SleepAction(1.5),
+                initServoAction(),
 
-    public class OutPutBySort implements Action {
-        private final Artifacts[] sort;
-        private int step = 0;
-        private int currentSlot = -1;
-        private boolean isRunning = false;
+                new SleepAction(0.5),
+                shootWithRecovery(sort[1], 1),
+                new SleepAction(1.5),
+                initServoAction(),
 
-        public OutPutBySort(Artifacts[] sort) {
-            this.sort = sort;
-        }
+                new SleepAction(0.5),
+                shootWithRecovery(sort[2], 2),
+                new SleepAction(1.5),
+                initServoAction(),
 
-        @Override
-        public boolean run(@NonNull TelemetryPacket packet) {
-            if (sort == null || step >= sort.length) {
-                initServos();
-                return false;
+                new SleepAction(0.5),
+                clearRemainingArtifacts(),
+                new SleepAction(1.5),
+                initServoAction()
+        );
+    }
+
+    private Action shootWithRecovery(Artifacts target, int step) {
+        return (telemetryPacket) -> {
+            updateColorSensors();
+            int slotToLift = -1;
+
+            for (int i = 0; i < 3; i++) {
+                if (artifactsStorage[i] == target) {
+                    slotToLift = i;
+                    break;
+                }
             }
 
-            updateColorSensors();
-            Artifacts target = sort[step];
-
-            if (!isRunning) {
+            if (slotToLift == -1) {
                 for (int i = 0; i < 3; i++) {
-                    if (artifactsStorage[i] == target) {
-                        currentSlot = i;
-                        setOutPutArtifacts(target);
-                        isRunning = true;
+                    if (artifactsStorage[i] != Artifacts.NONE) {
+                        slotToLift = i;
                         break;
                     }
                 }
-                if (!isRunning) {
-                    step++;
-                    return true;
+            }
+
+            if (slotToLift == -1) {
+                slotToLift = step;
+            }
+
+            servoPushers[slotToLift].setPosition(UP_POS[slotToLift]);
+            artifactsStorage[slotToLift] = Artifacts.NONE;
+
+            return false;
+        };
+    }
+
+    private Action clearRemainingArtifacts() {
+        return (telemetryPacket) -> {
+            updateColorSensors();
+            boolean foundSomething = false;
+            for (int i = 0; i < 3; i++) {
+                if (artifactsStorage[i] != Artifacts.NONE) {
+                    servoPushers[i].setPosition(UP_POS[i]);
+                    artifactsStorage[i] = Artifacts.NONE;
+                    foundSomething = true;
                 }
             }
-
-            if (artifactsStorage[currentSlot] == Artifacts.NONE) {
-                initServos();
-                waitingForDown = false;
-                currentSlot = -1;
-                isRunning = false;
-                step++;
-            }
-
-            return true;
-        }
+            return false;
+        };
     }
-
-    public Action outPutBySort(Artifacts[] sort) {
-        return new OutPutBySort(sort);
-    }
-
-
     public class InitServoAction implements Action{
 
         @Override
